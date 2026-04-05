@@ -11,36 +11,36 @@ from app.database.generate_sql_queries import (
     generate_delete_query)
 
 
-def select(db: Connection, table, columns=None, filter=None):
+async def select(db: Connection, table, columns=None, filter=None):
     try:
         query, values = generate_select_query(table, columns, filter)
-        with db.cursor(row_factory=dict_row) as cur:
-            cur.execute(query, values)
-            result = cur.fetchall()
+        async with db.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, values)
+            result = await cur.fetchall()
         return result
     except Exception as e:
         raise e
 
 
-def select_with_join(db: Connection, table, join_table, join_condition, columns=None, filter=None):
+async def select_with_join(db: Connection, table, join_table, join_condition, columns=None, filter=None):
     try:
         query, values = generate_select_query_with_join(
             table, join_table, join_condition, columns, filter)
-        with db.cursor(row_factory=dict_row) as cur:
-            cur.execute(query, values)
-            result = cur.fetchall()
+        async with db.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, values)
+            result = await cur.fetchall()
         return result
     except Exception as e:
         raise e
 
 
-def select_with_multiple_joins(db: Connection, table, joins, columns=None, filter=None):
+async def select_with_multiple_joins(db: Connection, table, joins, columns=None, filter=None):
     try:
         query, values = generate_multiple_joins_query(
             table, joins, columns, filter)
-        with db.cursor(row_factory=dict_row) as cur:
-            cur.execute(query, values)
-            result = cur.fetchall()
+        async with db.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, values)
+            result = await cur.fetchall()
         return result
     except Exception as e:
         raise e

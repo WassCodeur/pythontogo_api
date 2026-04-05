@@ -10,3 +10,4 @@ python-multipart==0.0.20
 python-slugify==8.0.1
 requests==2.32.4
 pydantic==2.12
+nanoid==2.0.0

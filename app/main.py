@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 from psycopg_pool import AsyncConnectionPool
-from redis.asyncio import Redis
+import redis.asyncio as redis
 from app.core.settings import settings
-from app.routers.api import api_router
+from app.routers.api import api_routers
 
 
 @asynccontextmanager
@@ -11,9 +11,12 @@ async def lifespan(app: FastAPI):
     db_pool = AsyncConnectionPool(conninfo=settings.db_url)
     app.state.db_pool = db_pool
     await db_pool.open()
-
+    redis_client = redis.ConnectionPool.from_url(settings.redis_url)
+    redis_client = redis.Redis(connection_pool=redis_client)
+    app.state.redis_client = redis_client
     yield
     await app.state.db_pool.close()
+    await app.state.redis_client.close()
 
 
 app = FastAPI(
@@ -39,4 +42,4 @@ async def welcome(request: Request):
     return message
 
 
-app.include_router(api_router)
+app.include_router(api_routers)

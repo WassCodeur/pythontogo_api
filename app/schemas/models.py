@@ -1,15 +1,10 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-
-
-class PartnerType(str, Enum):
-    PARTNERSHIP = "partnership"
-    SPONSORSHIP = "sponsorship"
 
 
 class PackageTier(str, Enum):
@@ -95,7 +90,7 @@ class PyConEditionBase(BaseModel):
 
 
 class RoleBase(BaseModel):
-    pycon_edition_id: UUID
+
     name: str
     description: str | None = None
 
@@ -106,7 +101,7 @@ class PermissionBase(BaseModel):
 
 
 class TeamMemberBase(BaseModel):
-    pycon_edition_id: UUID
+
     role_id: UUID | None = None
     first_name: str
     last_name: str
@@ -121,7 +116,7 @@ class TeamMemberBase(BaseModel):
 
 
 class VenueBase(BaseModel):
-    pycon_edition_id: UUID
+
     name: str
     address: str | None = None
     city: str | None = None
@@ -130,7 +125,7 @@ class VenueBase(BaseModel):
 
 
 class EventBase(BaseModel):
-    pycon_edition_id: UUID
+
     venue_id: UUID | None = None
     name: str
     slug: str
@@ -141,14 +136,14 @@ class EventBase(BaseModel):
 
 
 class TrackBase(BaseModel):
-    pycon_edition_id: UUID
+
     name: str
     description: str | None = None
     color: str | None = None
 
 
 class SpeakerBase(BaseModel):
-    pycon_edition_id: UUID
+
     first_name: str
     last_name: str
     full_name: str
@@ -163,7 +158,7 @@ class SpeakerBase(BaseModel):
 
 
 class SessionProposalBase(BaseModel):
-    pycon_edition_id: UUID
+
     primary_speaker_id: UUID | None = None
     title: str
     abstract: str
@@ -174,7 +169,7 @@ class SessionProposalBase(BaseModel):
 
 
 class SessionBase(BaseModel):
-    pycon_edition_id: UUID
+
     event_id: UUID | None = None
     track_id: UUID | None = None
     venue_id: UUID | None = None
@@ -188,20 +183,8 @@ class SessionBase(BaseModel):
     capacity: int | None = None
 
 
-class SponsorPartnerBase(BaseModel):
-    pycon_edition_id: UUID
-    name: str
-    website_url: str | None = None
-    contact_name: str | None = None
-    contact_email: str
-    contact_phone: str | None = None
-    description: str | None = None
-    logo_url: str | None = None
-    partner_type: PartnerType
-
-
 class SponsorshipPackageBase(BaseModel):
-    pycon_edition_id: UUID
+
     tier: PackageTier
     title: str
     price: Decimal
@@ -211,7 +194,7 @@ class SponsorshipPackageBase(BaseModel):
 
 
 class SponsorshipBase(BaseModel):
-    pycon_edition_id: UUID
+
     partner_id: UUID
     package_id: UUID | None = None
     amount: Decimal | None = None
@@ -221,7 +204,7 @@ class SponsorshipBase(BaseModel):
 
 
 class TicketTypeBase(BaseModel):
-    pycon_edition_id: UUID
+
     name: str
     description: str | None = None
     price: Decimal
@@ -230,7 +213,7 @@ class TicketTypeBase(BaseModel):
 
 
 class AttendeeBase(BaseModel):
-    pycon_edition_id: UUID
+
     first_name: str
     last_name: str
     full_name: str
@@ -248,7 +231,7 @@ class AttendeeBase(BaseModel):
 
 
 class RegistrationBase(BaseModel):
-    pycon_edition_id: UUID
+
     attendee_id: UUID
     ticket_type_id: UUID
     registration_code: str
@@ -258,7 +241,7 @@ class RegistrationBase(BaseModel):
 
 
 class PaymentBase(BaseModel):
-    pycon_edition_id: UUID
+
     registration_id: UUID
     amount: Decimal
     currency: str = "USD"
@@ -272,7 +255,7 @@ class PaymentBase(BaseModel):
 
 
 class RegistrationPaymentAdjustmentBase(BaseModel):
-    pycon_edition_id: UUID
+
     registration_id: UUID
     adjustment_type: AdjustmentType
     amount_delta: Decimal
@@ -280,7 +263,6 @@ class RegistrationPaymentAdjustmentBase(BaseModel):
 
 
 class ContactMessageCreate(BaseModel):
-    pycon_edition_id: UUID | None = None
     name: str
     email: str
     subject: str | None = None
@@ -288,7 +270,7 @@ class ContactMessageCreate(BaseModel):
 
 
 class AttendeeRegistrationCreate(BaseModel):
-    pycon_edition_id: UUID
+
     ticket_type_id: UUID
     first_name: str
     last_name: str
@@ -307,7 +289,6 @@ class AttendeeRegistrationCreate(BaseModel):
 
 
 class TalkSubmissionCreate(BaseModel):
-    pycon_edition_id: UUID
     primary_speaker_id: UUID | None = None
     title: str
     abstract: str
@@ -318,7 +299,6 @@ class TalkSubmissionCreate(BaseModel):
 
 
 class WorkshopSubmissionCreate(BaseModel):
-    pycon_edition_id: UUID
     primary_speaker_id: UUID | None = None
     title: str
     abstract: str
@@ -326,98 +306,127 @@ class WorkshopSubmissionCreate(BaseModel):
     language: str = "en"
     duration_minutes: int = 120
 
+# SPONSORS/PARTNERS SCHEMAS
 
-class SponsorInquiryCreate(BaseModel):
-    pycon_edition_id: UUID
+
+class PartnerType(str, Enum):
+    PARTNERSHIP = "partnership"
+    SPONSORSHIP = "sponsorship"
+    PYTHON_COMMUNITY = "python_community_partner"
+    COMMUNITY_PARTNER = "community_partner"
+    OTHER = "other"
+
+
+class SponsorPartnerBase(BaseModel):
     name: str
+    website_url: str | None = None
     contact_name: str | None = None
     contact_email: str
     contact_phone: str | None = None
-    website_url: str | None = None
     description: str | None = None
     logo_url: str | None = None
-    tier: PackageTier | None = None
-
-
-class PartnershipInquiryCreate(BaseModel):
-    pycon_edition_id: UUID
-    name: str
-    contact_name: str | None = None
-    contact_email: str
-    contact_phone: str | None = None
-    website_url: str | None = None
-    details: str
-
-
-class SponsorSummary(BaseModel):
-    name: str
     partner_type: PartnerType
+
+
+class PartnershipSponsorshipInquiry(SponsorPartnerBase):
+    package_tier: PackageTier | None = None
+
+
+class PartnerSponsorSummary(SponsorPartnerBase):
+    id: UUID
+    event_id: UUID
+    package_tier: PackageTier | None = None
     is_confirmed: bool = False
+    created_at: datetime
+    updated_at: datetime
 
 
-class SpeakerSummary(BaseModel):
-    full_name: str
-    headline: str | None = None
-    organization: str | None = None
+class SponsorsPartnersList(BaseModel):
+    sponsors_partners: list[PartnerSponsorSummary] = Field(
+        default_factory=list)
 
 
-class AttendeeSummary(BaseModel):
-    full_name: str
+class PartnerSponsorUpdate(BaseModel):
+    name: str | None = None
+    website_url: str | None = None
+    contact_name: str | None = None
+    contact_email: str | None = None
+    contact_phone: str | None = None
+    description: str | None = None
+    logo_url: str | None = None
+    partner_type: PartnerType | None = None
+    package_tier: PackageTier | None = None
+    is_confirmed: bool | None = None
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc))
+
+
+# cONTACT MESSAGES SCHEMA
+
+class ContactBase(BaseModel):
+    event_id: UUID | None = None
+    name: str
     email: str
-    whatsapp_number: str
-    discord_handle: str | None = None
+    subject: str | None = None
+    message: str
 
 
-class VenueSummary(BaseModel):
-    name: str
-    city: str | None = None
-    country: str | None = None
+class ContactMessageSummary(ContactBase):
+    id: UUID
+    is_resolved: bool = False
+    created_at: datetime
+    updated_at: datetime
 
 
-class TicketSummary(BaseModel):
-    name: str
-    price: Decimal
-    currency: str = "USD"
-    is_active: bool = True
+class ContactMessagesList(BaseModel):
+    contact_messages: list[ContactMessageSummary] = Field(
+        default_factory=list)
 
 
-class SessionSummary(BaseModel):
+class ContactMessageUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    subject: str | None = None
+    message: str | None = None
+    is_resolved: bool | None = None
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc))
+
+
+class APIKeyResponse(BaseModel):
+    api_key: str
+
+
+class APIKeyVerificationResponse(BaseModel):
+    is_valid: bool
+    message: str | None = None
+
+
+# event
+class EventBase(BaseModel):
+    code: str
     title: str
-    session_type: SessionType
-    starts_at: datetime | None = None
-    ends_at: datetime | None = None
+    tagline: str | None = None
+    description: str
+    location: str
+    country: str = "Togo"
+    city: str = "Lome"
+    google_maps_url: str | None = None
+    timezone: str = "Africa/Lome"
+    start_date: date
+    end_date: date
+    website_url: str | None = None
+    report_url: str | None = None
+    cfp_open_at: datetime | None = None
+    cfp_close_at: datetime | None = None
+    early_bird_sales_open_at: datetime | None = None
+    early_bird_sales_close_at: datetime | None = None
+    ticket_sales_open_at: datetime | None = None
+    ticket_sales_close_at: datetime | None = None
+    is_active: bool = False
 
 
-class YearSponsorsResponse(BaseModel):
-    edition_year: int
-    items: list[SponsorSummary] = Field(default_factory=list)
-
-
-class YearScheduleResponse(BaseModel):
-    edition_year: int
-    items: list[SessionSummary] = Field(default_factory=list)
-
-
-class YearSpeakersResponse(BaseModel):
-    edition_year: int
-    items: list[SpeakerSummary] = Field(default_factory=list)
-
-
-class YearAttendeesResponse(BaseModel):
-    edition_year: int
-    items: list[AttendeeSummary] = Field(default_factory=list)
-
-
-class YearVenuesResponse(BaseModel):
-    edition_year: int
-    items: list[VenueSummary] = Field(default_factory=list)
-
-
-class YearTicketsResponse(BaseModel):
-    edition_year: int
-    items: list[TicketSummary] = Field(default_factory=list)
-
-
-class YearWorkshopsResponse(BaseModel):
-    edition_year: int
-    items: list[SessionSummary] = Field(default_factory=list)
+class EventSummary(EventBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
