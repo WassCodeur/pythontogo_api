@@ -1,7 +1,5 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import HTTPException, Request
 
-from psycopg_pool import AsyncConnectionPool
-from redis.asyncio import Redis
 from typing import cast
 
 
