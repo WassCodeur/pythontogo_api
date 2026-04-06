@@ -9,7 +9,8 @@ from app.routers.api import api_routers
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    db_pool = AsyncConnectionPool(conninfo=settings.db_url)
+    db_pool = AsyncConnectionPool(
+        conninfo=settings.db_url, min_size=1, max_size=5, timeout=10)
     await db_pool.open()
     app.state.db_pool = db_pool
 

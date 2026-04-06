@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 
 from psycopg_pool import AsyncConnectionPool
 from redis.asyncio import Redis
@@ -6,11 +6,21 @@ from typing import cast
 
 
 async def get_db_connection(request: Request):
-    db_pool = cast(AsyncConnectionPool, request.app.state.db_pool)
-    async with db_pool.connection() as conn:
-        yield conn
+    try:
+        db_pool = request.app.state.db_pool
+        async with db_pool.connection() as connection:
+            yield connection
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 async def get_redis_client(request: Request):
-    redis_client = cast(Redis, request.app.state.redis_client)
-    yield redis_client
+    try:
+        redis_client = request.app.state.redis_client
+        yield redis_client
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail="Internal server error")
