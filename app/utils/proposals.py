@@ -69,7 +69,7 @@ async def add_proposal(db, proposal: ProposalCreate, event_code: str, background
     """
     try:
         event_code = event_code.upper()
-        proposal_data = proposal.model_dump()
+        proposal_data = proposal.model_dump(mode="json")
         event_data = await select(db, "events", filter={"code": event_code})
         if not event_data:
             # background task to send email to admin about missing event can be added here
@@ -105,7 +105,7 @@ async def update_proposal(db, proposal_id: str, proposal_update: ProposalUpdate,
     Update details of an existing proposal.
     """
     try:
-        proposal_data = remove_null_values(proposal_update.model_dump())
+        proposal_data = remove_null_values(proposal_update.model_dump(mode="json"))
         if not proposal_data:
             raise HTTPException(
                 status_code=400, detail="No valid fields provided for update")

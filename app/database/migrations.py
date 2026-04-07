@@ -169,9 +169,10 @@ CREATE_TABLE_QUERIES = [
         email VARCHAR(255) NOT NULL,
         subject VARCHAR(255),
         message TEXT NOT NULL,
+        organization VARCHAR(255),
         is_resolved BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     """,
     """
@@ -283,7 +284,7 @@ CREATE_TABLE_QUERIES = [
             ON DELETE CASCADE,
         CONSTRAINT fk_sessions_track
             FOREIGN KEY (track_id)
-            REFERENCES track(id)
+            REFERENCES tracks(id)
             ON DELETE SET NULL,
         CONSTRAINT fk_sessions_speaker
             FOREIGN KEY (speaker_id)
@@ -296,7 +297,6 @@ CREATE_TABLE_QUERIES = [
 
 CREATE_INDEX_QUERIES = [
     "CREATE INDEX IF NOT EXISTS idx_sponsors_partners_event_id ON sponsors_partners(event_id);",
-    "CREATE INDEX IF NOT EXISTS idx_contact_messages_event_id ON contact_messages(event_id);",
     "CREATE INDEX IF NOT EXISTS idx_api_keys_event_id ON api_keys(event_id);",
 ]
 

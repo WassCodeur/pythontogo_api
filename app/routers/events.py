@@ -15,7 +15,7 @@ api_router = APIRouter(prefix="/events", tags=["events"])
 async def create_event(event: EventBase, background_tasks: BackgroundTasks, db=Depends(get_db_connection)):
     try:
 
-        result = await add_event(db, event.model_dump(), background_tasks)
+        result = await add_event(db, event.model_dump(mode="json"), background_tasks)
         return result
     except Exception as e:
         logger.error(f"Error adding event: {str(e)}")
@@ -64,7 +64,7 @@ async def update_event_details(event_code: str, event_update: EventUpdate,  back
     try:
         event_code = event_code.upper()
         event_data_to_update = {
-            k: v for k, v in event_update.model_dump().items() if v is not None}
+            k: v for k, v in event_update.model_dump(mode="json").items() if v is not None}
         result = await update_event(db, event_code, event_data_to_update, background_tasks)
         return result
     except Exception as e:

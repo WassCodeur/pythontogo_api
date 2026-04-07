@@ -25,7 +25,8 @@ api_router = APIRouter(prefix="/partners-sponsors",
 async def partnership_sponsorship_inquiry(event_code: str, payload: PartnershipSponsorshipInquiry, background_tasks: BackgroundTasks, db=Depends(get_db_connection)):
     try:
         event_code = event_code.upper()
-        result = await add_sponsor_partner(db, payload.model_dump(), event_code, background_tasks)
+        payload_dict = payload.model_dump(mode="json")
+        result = await add_sponsor_partner(db, payload_dict, event_code, background_tasks)
         return result
     except Exception as e:
         logger.error(
@@ -47,6 +48,8 @@ async def get_all_partners_sponsors(db=Depends(get_db_connection)):
         return partners_sponsors
     except Exception as e:
         logger.error(f"Error retrieving partners/sponsors: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(
             status_code=500, detail="Error retrieving partners/sponsors")
 
@@ -71,8 +74,7 @@ async def get_partners_sponsors(event_code: str, db=Depends(get_db_connection)):
 @api_router.put("/{partner_id}", response_model=MessageResponse)
 async def update_partner_sponsor(partner_id: str, payload: PartnerSponsorUpdate, background_tasks: BackgroundTasks, db=Depends(get_db_connection)):
     try:
-        data_to_update = {k: v for k,
-                          v in payload.model_dump().items() if v is not None}
+        data_to_update = payload.model_dump(mode="json")
 
         result = await _update_partner_sponsor(db, partner_id, data_to_update, background_tasks)
         return result

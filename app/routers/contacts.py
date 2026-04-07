@@ -54,7 +54,7 @@ async def _get_contact_by_id(contact_id: str, db=Depends(get_db_connection)):
 async def add_contact_message(payload: ContactBase, background_tasks: BackgroundTasks, db=Depends(get_db_connection)):
     """Add a new contact message."""
     try:
-        result = await add_contact(db, payload.model_dump(), background_tasks)
+        result = await add_contact(db, payload.model_dump(mode="json"), background_tasks)
         return result
     except Exception as e:
         logger.error(f"Error adding contact message: {str(e)}")
@@ -68,7 +68,7 @@ async def add_contact_message(payload: ContactBase, background_tasks: Background
 async def _update_contact(contact_id: str, payload: ContactMessageUpdate, background_tasks: BackgroundTasks, db=Depends(get_db_connection)):
     try:
         data_to_update = {k: v for k,
-                          v in payload.model_dump().items() if v is not None}
+                          v in payload.model_dump(mode="json").items() if v is not None}
 
         result = await update_contact(db, contact_id, data_to_update, background_tasks)
         return result

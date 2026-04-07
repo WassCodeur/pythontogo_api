@@ -12,7 +12,7 @@ security = HTTPBearer()
 def generate_api_key():
     from nanoid import generate
     genrated_key = generate(
-        alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", size=32)
+        alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", size=40)
 
     api_key = f"PYTOGO_SK_{genrated_key}"
     return api_key
@@ -21,7 +21,7 @@ def generate_api_key():
 async def verify_api_key(credentials: Annotated[HTTPBasicCredentials, Depends(security)], db=Depends(get_db_connection), redis=Depends(get_redis_client)):
 
     api_key_value = credentials.credentials
-    if not api_key_value.startswith("PYTOGO_SK_") or len(api_key_value) != 42:
+    if not api_key_value.startswith("PYTOGO_SK_") or len(api_key_value) != 50:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key format")
     expected_api_key = await redis.get(f"PYTOGO_API_KEY:{credentials.credentials}")

@@ -58,6 +58,8 @@ class PartnershipSponsorshipInquiry(SponsorPartnerBase):
 class PartnerSponsorSummary(SponsorPartnerBase):
     id: UUID
     event_id: UUID
+    website_url: str = None
+    contact_email: str
     package_tier: PackageTier | None = None
     is_confirmed: bool = False
     created_at: datetime
@@ -71,9 +73,9 @@ class SponsorsPartnersList(BaseModel):
 
 class PartnerSponsorUpdate(BaseModel):
     name: str | None = None
-    website_url: HttpUrl = None
-    contact_name: str
-    contact_email: EmailStr
+    website_url: HttpUrl | None = None
+    contact_name: str | None = None
+    contact_email: EmailStr | None = None
     contact_phone: str | None = None
     description: str | None = None
     logo_url: str | None = None
@@ -95,6 +97,7 @@ class ContactBase(BaseModel):
 
 class ContactMessageSummary(ContactBase):
     id: UUID
+    email: str
     is_resolved: bool = False
     created_at: datetime
     updated_at: datetime
@@ -187,6 +190,9 @@ class EventUpdate(BaseModel):
 
 class EventSummary(EventBase):
     id: UUID
+    google_maps_url: str | None = None
+    website_url: str | None = None
+    report_url: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -259,21 +265,21 @@ class ProposalCreate(ProposalBase):
 
 
 class ProposalUpdate(BaseModel):
-    title: str = Field(None, description="The title of the proposal")
+    title: str = Field(..., description="The title of the proposal")
     description: str = Field(
-        None, description="A detailed description of the proposal")
+        ..., description="A detailed description of the proposal")
     abstract: str = Field(
-        None, description="A brief abstract summarizing the proposal")
+        ..., description="A brief abstract summarizing the proposal")
     level: str = Field(
-        None, description="The intended audience level for the proposal (e.g., Beginner, Intermediate, Advanced)")
+        ..., description="The intended audience level for the proposal (e.g., Beginner, Intermediate, Advanced)")
     language: str = Field(
-        None, description="The language in which the session will be delivered (e.g., English, French)")
+        ..., description="The language in which the session will be delivered (e.g., English, French)")
     track_id: UUID = Field(
         None, description="The ID of the track to which the proposal belongs")
     speaker_full_name:  str = Field(
-        None, description="The full name of the speaker submitting the proposal")
+        ..., description="The full name of the speaker submitting the proposal")
     speaker_email: EmailStr = Field(
-        None, description="The email address of the speaker submitting the proposal")
+        ..., description="The email address of the speaker submitting the proposal")
     speaker_phone: str = Field(
         None, description="The phone number of the speaker submitting the proposal")
     speaker_organization: str = Field(
@@ -301,6 +307,9 @@ class ProposalUpdate(BaseModel):
 class ProposalSummary(ProposalBase):
     id: UUID
     event_id: UUID
+    speaker_email: str = None
+    speaker_photo_url: str | None = None
+    speaker_social_links: dict[str, str] = Field(default_factory=dict)
     session_type: SessionType
     status: SubmissionStatus
     created_at: datetime
@@ -325,6 +334,8 @@ class SpeakerSummary(SpeakerBase):
     id: UUID
     event_id: UUID
     proposal_id: UUID | None = None
+    photo_url: str | None = None
+    social_links: dict[str, str] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
 

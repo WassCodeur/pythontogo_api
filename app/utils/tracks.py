@@ -60,7 +60,7 @@ async def add_track(db, track: TrackCreate, event_code: str, background_tasks: B
     """
     try:
         event_code = event_code.upper()
-        track_data = track.model_dump()
+        track_data = track.model_dump(mode="json")
         event_data = await select(db, "events", filter={"code": event_code})
         if not event_data:
             raise HTTPException(status_code=404, detail="Event not found")
@@ -88,7 +88,7 @@ async def update_track(db, track_id, track: TrackUpdate, background_tasks: Backg
     Update an existing track in the database.
     """
     try:
-        track_data = remove_null_values(track.model_dump())
+        track_data = remove_null_values(track.model_dump(mode="json"))
         existing_track = await select(db, "tracks", filter={"id": track_id})
         if not existing_track:
             raise HTTPException(status_code=404, detail="Track not found")

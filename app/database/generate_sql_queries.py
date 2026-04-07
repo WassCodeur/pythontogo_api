@@ -1,5 +1,6 @@
 from psycopg.sql import SQL, Identifier
 from psycopg.types.json import Jsonb
+from enum import Enum
 
 
 def normalize_value(value):
@@ -16,6 +17,14 @@ def normalize_value(value):
     if isinstance(value, dict):
         return Jsonb(value)
     return value
+
+
+def normalize_data(data: dict):
+    return {
+        k: str(v) if not isinstance(
+            v, (int, float, bool, dict, type(None))) else v
+        for k, v in data.items()
+    }
 
 
 def build_column(column):
@@ -58,6 +67,7 @@ def generate_select_query(table, columns=None, filter=None):
     )
     values = []
     if filter:
+        filter = normalize_data(filter)
         where_clauses = []
         for key, value in filter.items():
             where_clauses.append(SQL("{} = {}").format(
@@ -95,6 +105,7 @@ def generate_select_query_with_join(table, join_table, join_condition, columns=N
     )
     values = []
     if filter:
+        filter = normalize_data(filter)
         where_clauses = []
         for key, value in filter.items():
             column_sql = build_column(key)
@@ -139,6 +150,7 @@ def generate_multiple_joins_query(table, joins, columns=None, filter=None):
 
     values = []
     if filter:
+        filter = normalize_data(filter)
         where_clauses = []
         for key, value in filter.items():
             column_sql = build_column(key)
@@ -164,6 +176,7 @@ def generate_insert_query(table, data):
     -------
         tuple: A tuple containing the SQL query and a tuple of values for parameterized queries.
     """
+    data = normalize_data(data)
 
     columns = data.keys()
     values = [normalize_value(value) for value in data.values()]
@@ -190,6 +203,8 @@ def generate_update_query(table, data, filter):
     """
     set_clauses = []
     values = []
+
+    data = normalize_data(data)
     for key, value in data.items():
         set_clauses.append(SQL("{} = {}").format(
             Identifier(key), SQL("%s")))
@@ -200,6 +215,7 @@ def generate_update_query(table, data, filter):
         set_sql
     )
     if filter:
+        filter = normalize_data(filter)
         where_clauses = []
         for key, value in filter.items():
             column_sql = build_column(key)
@@ -228,6 +244,7 @@ def generate_delete_query(table, filter):
     query = SQL("DELETE FROM {}").format(Identifier(table))
     values = []
     if filter:
+        filter = normalize_data(filter)
         where_clauses = []
         for key, value in filter.items():
             column_sql = build_column(key)
