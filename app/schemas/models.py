@@ -58,7 +58,7 @@ class PartnershipSponsorshipInquiry(SponsorPartnerBase):
 class PartnerSponsorSummary(SponsorPartnerBase):
     id: UUID
     event_id: UUID
-    website_url: str = None
+    website_url: str | None = None
     contact_email: str
     package_tier: PackageTier | None = None
     is_confirmed: bool = False

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, status, HTTPException
-from app.utils.sponsor_partner import (add_sponsor_partner, get_sponsors_partners_by_event,
+from app.utils.sponsor_partner import (add_sponsor_partner, get_confirmed_sponsors_partners, get_confirmed_sponsors_partners_by_event, get_sponsors_partners_by_event,
                                        get_sponsors_partners, _update_partner_sponsor, delete_sponsor_partner)
 
 
@@ -54,6 +54,23 @@ async def get_all_partners_sponsors(db=Depends(get_db_connection)):
             status_code=500, detail="Error retrieving partners/sponsors")
 
 
+@api_router.get("/confirmed/all", response_model=list[PartnerSponsorSummary])
+async def get_confirmed_partners_sponsors(db=Depends(get_db_connection)):
+    try:
+        partners_sponsors = await get_confirmed_sponsors_partners(db)
+        if not partners_sponsors:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="No partners/sponsors found")
+
+        return partners_sponsors
+    except Exception as e:
+        logger.error(f"Error retrieving partners/sponsors: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(
+            status_code=500, detail="Error retrieving partners/sponsors")
+
+
 @api_router.get("/all/{event_code}", response_model=list[PartnerSponsorSummary])
 async def get_partners_sponsors(event_code: str, db=Depends(get_db_connection)):
     try:
@@ -64,6 +81,27 @@ async def get_partners_sponsors(event_code: str, db=Depends(get_db_connection)):
                                 detail=f"No partners/sponsors found for event {event_code}")
         return partners_sponsors
     except Exception as e:
+        print(
+            f"Error retrieving partners/sponsors for event {event_code}: {str(e)}")
+        logger.error(f"Error retrieving partners/sponsors: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(
+            status_code=500, detail="Error retrieving partners/sponsors")
+
+
+@api_router.get("/confirmed/all/{event_code}", response_model=list[PartnerSponsorSummary])
+async def get_confirmed_partners_sponsors(event_code: str, db=Depends(get_db_connection)):
+    try:
+        event_code = event_code.strip().upper()
+        partners_sponsors = await get_confirmed_sponsors_partners_by_event(db, event_code=event_code)
+        if not partners_sponsors:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"No partners/sponsors found for event {event_code}")
+        return partners_sponsors
+    except Exception as e:
+        print(
+            f"Error retrieving partners/sponsors for event {event_code}: {str(e)}")
         logger.error(f"Error retrieving partners/sponsors: {str(e)}")
         if isinstance(e, HTTPException):
             raise e
