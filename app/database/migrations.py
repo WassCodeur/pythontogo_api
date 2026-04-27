@@ -262,17 +262,17 @@ CREATE_TABLE_QUERIES = [
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         event_id UUID NOT NULL,
         proposal_id UUID,
-        first_name VARCHAR(255) NOT NULL,
-        last_name VARCHAR(255) NOT NULL,
         full_name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
         headline VARCHAR(255),
         organization VARCHAR(255),
+        company_logo_url TEXT,
         country VARCHAR(120),
-        bio TEXT,
-        photo_url TEXT,
+        bio TEXT NOT NULL,
+        photo_url TEXT NOT NULL,
         social_links JSONB,
-        website_url TEXT,
+        sessions JSONB,
+        is_featured BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         CONSTRAINT fk_speakers_event
@@ -348,6 +348,7 @@ CREATE_TABLE_QUERIES = [
             REFERENCES events(id)
             ON DELETE CASCADE
     );""",
+
 ]
 
 

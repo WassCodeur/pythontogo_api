@@ -1,6 +1,6 @@
 from datetime import date, datetime, timezone
 from enum import Enum
-from typing import Any
+from typing import Any, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field, EmailStr, HttpUrl
@@ -384,25 +384,30 @@ class ProposalSummary(ProposalBase):
 
 
 class SpeakerBase(BaseModel):
-    first_name: str
-    last_name: str
     full_name: str
-    email: str
+    email: EmailStr
     headline: str | None = None
     organization: str | None = None
+    company_logo_url: str | None = None
     country: str | None = None
-    bio: str | None = None
-    photo_url: HttpUrl | None = None
+    bio: str
+    photo_url: str
     social_links: dict[str, str] = Field(default_factory=dict)
-    website_url: HttpUrl | None = None
+    sessions: List[dict[str, str]] = Field(default_factory=list)
+    is_featured: bool = False
 
 
-class SpeakerSummary(SpeakerBase):
-    id: UUID
-    event_id: UUID
-    proposal_id: UUID | None = None
-    photo_url: str | None = None
+class SpeakerSummary(BaseModel):
+    full_name: str
+    headline: str | None = None
+    organization: str | None = None
+    company_logo_url: str | None = None
+    country: str | None = None
+    bio: str
+    photo_url: str
     social_links: dict[str, str] = Field(default_factory=dict)
+    sessions: List[dict[str, str]] = Field(default_factory=list)
+    is_featured: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -412,17 +417,17 @@ class SpeakerCreate(SpeakerBase):
 
 
 class SpeakerUpdate(BaseModel):
-    first_name: str | None = None
-    last_name: str | None = None
     full_name: str | None = None
     email: EmailStr | None = None
     headline: str | None = None
     organization: str | None = None
+    company_logo_url: str | None = None
     country: str | None = None
     bio: str | None = None
-    photo_url: HttpUrl | None = None
-    social_links: dict[str, HttpUrl] | None = None
-    website_url: HttpUrl | None = None
+    photo_url: str | None = None
+    social_links: dict[str, str] | None = None
+    sessions: List[dict[str, str]] | None = None
+    is_featured: bool | None = None
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc))
 

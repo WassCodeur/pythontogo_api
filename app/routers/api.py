@@ -7,6 +7,7 @@ from app.routers.proposals import api_router as proposals_router
 from app.routers.tracks import api_router as tracks_router
 from app.routers.topics import api_router as topics_router
 from app.routers.proposal_formats import api_router as proposal_formats_router
+from app.routers.speaker import api_router as speakers_router
 from fastapi import APIRouter
 from app.core.security import verify_api_key
 
@@ -22,3 +23,4 @@ api_routers.include_router(proposals_router)
 api_routers.include_router(tracks_router)
 api_routers.include_router(topics_router)
 api_routers.include_router(proposal_formats_router)
+api_routers.include_router(speakers_router)
