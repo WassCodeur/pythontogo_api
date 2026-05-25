@@ -6,7 +6,9 @@ class Config(BaseModel):
 
     env: str = "development"
     app_name: str = "Python Togo API V2.1.0"
+    business_name: str = "Python Software Community of Togo"
     debug: bool = False
+    base_url: str = "http://localhost:8008"
     db_url: str = "sqlite:///./test.db"
     db_name: str = "test.db"
     db_user: str = "user"
@@ -22,3 +24,7 @@ class Config(BaseModel):
     smtp_port: int = 587
     smtp_user: str = "user"
     smtp_password: str = "password"
+    paydunya_public_key: str
+    paydunya_private_key: str
+    paydunya_token: str
+    paydunya_master_key: str

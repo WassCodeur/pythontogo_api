@@ -6,6 +6,7 @@ from psycopg_pool import AsyncConnectionPool
 import redis.asyncio as redis
 from app.core.settings import settings
 from app.routers.api import api_routers
+from app.webhooks.payments_callback import api_router as payments_callback_router
 
 origins = []
 if settings.env == "development":
@@ -64,8 +65,9 @@ app.add_middleware(
 
 
 @app.get("/")
-async def welcome(request: Request):
-    docs_url = f"{request.base_url}docs"
+async def welcome():
+    base_url = settings.base_url.rstrip("/")
+    docs_url = f"{base_url}/docs"
     message = {
         "message": "Welcome to Python Togo official api",
         "version": "2.1.0",
@@ -80,3 +82,4 @@ async def favicon():
     return FileResponse("app/static/favicon.ico")
 
 app.include_router(api_routers)
+app.include_router(payments_callback_router)
