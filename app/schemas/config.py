@@ -9,6 +9,7 @@ class Config(BaseModel):
     business_name: str = "Python Software Community of Togo"
     debug: bool = False
     base_url: str = "http://localhost:8008"
+    root_path: str = "/api/v2"
     db_url: str = "sqlite:///./test.db"
     db_name: str = "test.db"
     db_user: str = "user"

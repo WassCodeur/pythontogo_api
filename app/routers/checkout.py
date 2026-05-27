@@ -6,6 +6,8 @@ from app.payments.paydunya_service import create_invoice
 
 api_router = APIRouter(prefix="/checkout", tags=["checkout"])
 base_url = settings.base_url.rstrip("/")
+root_path = settings.root_path.rstrip("/").lstrip("/")
+base_url = f"{base_url}/{root_path}" if root_path else base_url
 
 
 @api_router.post("/payment")
@@ -28,13 +30,3 @@ def create_payment(payment: Payment):
             raise e
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="failed to process payment")
-
-
-@api_router.get("/payment/success")
-def payment_success():
-    return {"message": "Payment successful"}
-
-
-@api_router.get("/payment/cancel")
-def payment_cancel():
-    return {"message": "Payment cancelled"}

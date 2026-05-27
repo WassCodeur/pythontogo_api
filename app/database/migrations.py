@@ -61,8 +61,8 @@ BEGIN
         );
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'registration_status_enum') THEN
-        CREATE TYPE registration_status_enum AS ENUM (
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'attendance_status_enum') THEN
+        CREATE TYPE attendance_status_enum AS ENUM (
             'pending',
             'confirmed',
             'cancelled',
@@ -73,7 +73,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_status_enum') THEN
         CREATE TYPE payment_status_enum AS ENUM (
             'pending',
-            'succeeded',
+            'completed',
             'failed',
             'refunded'
         );
@@ -341,12 +341,64 @@ CREATE_TABLE_QUERIES = [
         name_en VARCHAR(255) NOT NULL,
         description_fr TEXT,
         description_en TEXT,
+        benefits_fr TEXT,
+        benefits_en TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         CONSTRAINT fk_proposal_formats_event
             FOREIGN KEY (event_id)
             REFERENCES events(id)
             ON DELETE CASCADE
+    );""",
+    """
+    CREATE TABLE IF NOT EXISTS tickets (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_id UUID NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
+        quantity INTEGER NOT NULL CHECK (quantity >= 0),
+        sales_start TIMESTAMPTZ,
+        sales_end TIMESTAMPTZ,
+        early_bird_discount NUMERIC(5, 2) CHECK (early_bird_discount >= 0 AND early_bird_discount <= 100),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT fk_tickets_event
+            FOREIGN KEY (event_id)
+            REFERENCES events(id)
+            ON DELETE CASCADE
+    );""",
+    """
+    CREATE TABLE IF NOT EXISTS registrations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_id UUID NOT NULL,
+        ticket_id UUID,
+        ticket_price NUMERIC(10, 2) NOT NULL CHECK (ticket_price >= 0),
+        ticket_quantity INTEGER NOT NULL CHECK (ticket_quantity >= 1),
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        whatsapp_number VARCHAR(40),
+        ticket_type VARCHAR(255) NOT NULL,
+        attendance_status attendance_status_enum NOT NULL DEFAULT 'pending',
+        payment_status payment_status_enum NOT NULL DEFAULT 'pending',
+        dietary_restrictions TEXT,
+        payment_reference TEXT,
+        payment_link TEXT,
+        agreed_to_code_of_conduct BOOLEAN NOT NULL DEFAULT FALSE,
+        agreed_to_privacy_policy BOOLEAN NOT NULL DEFAULT FALSE,
+        shared_with_sponsors BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT fk_registrations_event
+            FOREIGN KEY (event_id)
+            REFERENCES events(id)
+            ON DELETE CASCADE,
+        CONSTRAINT fk_registrations_ticket
+            FOREIGN KEY (ticket_id)
+            REFERENCES tickets(id)
+            ON DELETE SET NULL
+        
+        
     );""",
 
 ]

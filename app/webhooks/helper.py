@@ -39,3 +39,16 @@ def phpformat_to_json(data, result: dict):
         parts = [p for p in parts if p]
 
         insert_nested(result, parts, value)
+
+
+def apply_discount(discount, total_price):
+    """
+    apply a discount to a total price and return the new price
+    discount can be of type percentage or fixed
+    """
+    new_price = total_price
+    if discount.type == "percentage":
+        new_price = total_price - (total_price * (discount.value / 100))
+    elif discount.type == "fixed":
+        new_price = total_price - discount.value
+    return new_price

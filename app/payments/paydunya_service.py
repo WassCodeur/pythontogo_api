@@ -14,6 +14,8 @@ paydunya.api_keys = {
 store = Store(**infos)
 
 base_url = settings.base_url.rstrip("/")
+root_path = settings.root_path.rstrip("/").lstrip("/")
+base_url = f"{base_url}/{root_path}" if root_path else base_url
 
 
 def create_invoice(description, unit_price, callback_url=None,   qte=1, name=None, success_page_url=None, cancel_page_url=None):

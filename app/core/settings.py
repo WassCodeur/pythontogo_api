@@ -14,6 +14,7 @@ settings = Config(
     business_name=config(
         "BUSINESS_NAME", default="Python Software Community of Togo"),
     base_url=config("BASE_URL", default="http://localhost:8008"),
+    root_path=config("ROOT_PATH", default="/api/v2"),
     db_url=config("DB_URL", default="sqlite:///./test.db"),
     db_name=config("DB_NAME", default="test.db"),
     db_user=config("DB_USER", default="user"),

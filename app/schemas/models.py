@@ -496,3 +496,89 @@ class ProposalFormatSummary(ProposalFormatBase):
     event_id: UUID
     created_at: datetime
     updated_at: datetime
+
+
+class RegistrationBase(BaseModel):
+    full_name: str
+    email: EmailStr
+    whatsapp_number: str | None = None
+    ticket_type: str
+    ticket_id: UUID
+    ticket_price: int = Field(..., ge=200,
+                              description="The price of the ticket, must be at least 200")
+    quantity: int = Field(..., ge=1,
+                          description="The quantity of tickets, must be at least 1")
+    attendance_status: str = "pending"
+    payment_status: str = "pending"
+    dietary_restrictions: str | None = None
+    payment_reference: str | None = None
+    payment_link: str | None = None
+    agreed_to_code_of_conduct: bool = False
+    agreed_to_privacy_policy: bool = False
+    shared_with_sponsors: bool = False
+    success_page_url: str | None = None
+    cancel_page_url: str | None = None
+
+
+class RegistrationCreate(RegistrationBase):
+    pass
+
+
+class RegistrationSummary(RegistrationBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class RegistrationUpdate(BaseModel):
+    full_name: str | None = None
+    email: EmailStr | None = None
+    whatsapp_number: str | None = None
+    ticket_type: str | None = None
+    attendance_status: str | None = None
+    payment_status: str | None = None
+    dietary_restrictions: str | None = None
+    payment_reference: str | None = None
+    payment_link: str | None = None
+    agreed_to_code_of_conduct: bool | None = None
+    agreed_to_privacy_policy: bool | None = None
+    shared_with_sponsors: bool | None = None
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc))
+
+
+class TicketBase(BaseModel):
+    name: str
+    description: str | None = None
+    price: float = Field(..., ge=0, description="Price must be non-negative")
+    quantity: int = Field(..., ge=0,
+                          description="Quantity must be non-negative")
+    sales_start: datetime | None = None
+    sales_end: datetime | None = None
+    early_bird_discount: float | None = Field(
+        default=None, ge=0, le=100, description="Early bird discount percentage must be between 0 and 100")
+
+
+class TicketCreate(TicketBase):
+    pass
+
+
+class TicketUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    price: float | None = Field(
+        default=None, ge=0, description="Price must be non-negative")
+    quantity: int | None = Field(
+        default=None, ge=0, description="Quantity must be non-negative")
+    sales_start: datetime | None = None
+    sales_end: datetime | None = None
+    early_bird_discount: float | None = Field(
+        default=None, ge=0, le=100, description="Early bird discount percentage must be between 0 and 100")
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc))
+
+
+class TicketSummary(TicketBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime

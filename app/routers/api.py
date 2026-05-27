@@ -9,6 +9,8 @@ from app.routers.topics import api_router as topics_router
 from app.routers.proposal_formats import api_router as proposal_formats_router
 from app.routers.speaker import api_router as speakers_router
 from app.routers.checkout import api_router as checkout_router
+from app.routers.tickets import api_router as tickets_router
+from app.routers.registrations import api_router as registrations_router
 from fastapi import APIRouter
 from app.core.security import verify_api_key
 
@@ -26,3 +28,5 @@ api_routers.include_router(topics_router)
 api_routers.include_router(proposal_formats_router)
 api_routers.include_router(speakers_router)
 api_routers.include_router(checkout_router)
+api_routers.include_router(registrations_router)
+api_routers.include_router(tickets_router)
