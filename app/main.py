@@ -1,4 +1,4 @@
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
@@ -78,9 +78,58 @@ async def welcome():
     return message
 
 
+@app.get("/unsubscribe", status_code=200)
+async def unsubscribe():
+    html_content = """
+    <html>
+        <head>
+            <title>Unsubscribe from Python Togo Emails</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                }
+                .container {
+                    background-color: #ffffff;
+                    padding: 30px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    text-align: center;
+                }
+                .button {
+                    display: inline-block;
+                    padding: 10px 20px;
+                    margin-top: 20px;
+                    font-size: 16px;
+                    color: #ffffff;
+                    background-color: #9bc6a6;
+                    border: none;
+                    border-radius: 5px;
+                    text-decoration: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>You have been unsubscribed</h1>
+                <p>You will no longer receive emails from Python Togo.</p>
+                <a href="https://www.pytogo.org" class="button">Visit Our Website</a>
+            </div>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)
+
+
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return FileResponse("app/static/favicon.ico")
+
 
 app.include_router(api_routers)
 app.include_router(payments_callback_router)
