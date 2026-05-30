@@ -11,6 +11,7 @@ from app.routers.speaker import api_router as speakers_router
 from app.routers.checkout import api_router as checkout_router
 from app.routers.tickets import api_router as tickets_router
 from app.routers.registrations import api_router as registrations_router
+from app.routers.helper import app_router as helper_router
 from fastapi import APIRouter
 from app.core.security import verify_api_key
 
@@ -30,3 +31,4 @@ api_routers.include_router(speakers_router)
 api_routers.include_router(checkout_router)
 api_routers.include_router(registrations_router)
 api_routers.include_router(tickets_router)
+api_routers.include_router(helper_router)

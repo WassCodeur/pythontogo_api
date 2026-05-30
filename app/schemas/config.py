@@ -29,3 +29,6 @@ class Config(BaseModel):
     paydunya_private_key: str
     paydunya_token: str
     paydunya_master_key: str
+    imagekit_public_key: str
+    imagekit_private_key: str
+    imagekit_url_endpoint: str

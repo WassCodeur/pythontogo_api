@@ -555,8 +555,8 @@ class TicketBase(BaseModel):
                           description="Quantity must be non-negative")
     sales_start: datetime | None = None
     sales_end: datetime | None = None
-    early_bird_discount: float | None = Field(
-        default=None, ge=0, le=100, description="Early bird discount percentage must be between 0 and 100")
+    early_bird_price: float | None = Field(
+        default=None, ge=0, description="Early bird price must be non-negative")
 
 
 class TicketCreate(TicketBase):
@@ -572,13 +572,64 @@ class TicketUpdate(BaseModel):
         default=None, ge=0, description="Quantity must be non-negative")
     sales_start: datetime | None = None
     sales_end: datetime | None = None
-    early_bird_discount: float | None = Field(
-        default=None, ge=0, le=100, description="Early bird discount percentage must be between 0 and 100")
+    early_bird_price: float | None = Field(
+        default=None, ge=0, description="Early bird price must be non-negative")
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc))
 
 
 class TicketSummary(TicketBase):
     id: UUID
-    created_at: datetime
-    updated_at: datetime
+    name: str | None = None
+    description: str | None = None
+    price: float | None = Field(
+        default=None, ge=0, description="Price must be non-negative")
+    quantity: int | None = Field(
+        default=None, ge=0, description="Quantity must be non-negative")
+    early_bird_price: float | None = Field(
+        default=None, ge=0, description="Early bird price must be non-negative")
+
+
+class TicketStudentProofPayload(BaseModel):
+    fileName: str
+    mimeType: str
+    base64: str
+
+
+class TicketBuyerPayload(BaseModel):
+    fullName: str
+    firstName: str
+    lastName: str
+    email: EmailStr
+    whatsapp: str | None = None
+    dietaryRestrictions: str | None = None
+
+
+class TicketConsentPayload(BaseModel):
+    codeOfConduct: bool
+    privacyPolicy: bool
+    terms: bool
+    partnerSharing: bool = False
+
+
+class TicketPayload(BaseModel):
+    id: str
+    name: str
+    unitPrice: int = Field(gt=0)
+    currency: str
+    isStudent: bool = False
+
+
+class TicketSubmissionPayload(BaseModel):
+    ticket: TicketPayload
+    quantity: int = Field(gt=0)
+    total: int = Field(gt=0)
+    buyer: TicketBuyerPayload
+    consent: TicketConsentPayload
+    coupon: str | None = None
+    studentProof: TicketStudentProofPayload | None = None
+
+
+class StudentProof(RegistrationCreate):
+    file_url: str
+    file_type: str

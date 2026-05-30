@@ -34,7 +34,10 @@ settings = Config(
     paydunya_public_key=config("PAYDUNYA_PUBLIC_KEY"),
     paydunya_private_key=config("PAYDUNYA_PRIVATE_KEY"),
     paydunya_token=config("PAYDUNYA_TOKEN"),
-    paydunya_master_key=config("PAYDUNYA_MASTER_KEY")
+    paydunya_master_key=config("PAYDUNYA_MASTER_KEY"),
+    imagekit_private_key=config("IMAGEKIT_PRIVATE_KEY"),
+    imagekit_public_key=config("IMAGEKIT_PUBLIC_KEY"),
+    imagekit_url_endpoint=config("IMAGEKIT_URL_ENDPOINT")
 )
 
 

@@ -360,7 +360,7 @@ CREATE_TABLE_QUERIES = [
         quantity INTEGER NOT NULL CHECK (quantity >= 0),
         sales_start TIMESTAMPTZ,
         sales_end TIMESTAMPTZ,
-        early_bird_discount NUMERIC(5, 2) CHECK (early_bird_discount >= 0 AND early_bird_discount <= 100),
+        early_bird_price NUMERIC(10, 2) CHECK (early_bird_price >= 0),
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         CONSTRAINT fk_tickets_event
@@ -400,6 +400,21 @@ CREATE_TABLE_QUERIES = [
         
         
     );""",
+    """CREATE TABLE IF NOT EXISTS student_proofs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        registration_id UUID NOT NULL,
+        file_url TEXT NOT NULL,
+        file_type VARCHAR(255) NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT fk_student_proofs_registration
+            FOREIGN KEY (registration_id)
+            REFERENCES registrations(id)
+            ON DELETE CASCADE
+    );""",
+
 
 ]
 

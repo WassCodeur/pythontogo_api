@@ -5,7 +5,7 @@ from app.utils.tickets import update_ticket, get_ticket_by_id
 from app.utils.send_email import send_email_for_ticket_puchase_confirmation, send_email_for_confirme_your_ticket_purchase
 
 
-async def create_registration(db, registration):
+async def create_registration(db, registration, is_student=False):
     """
     Create a new registration for an event.
     """
@@ -14,9 +14,13 @@ async def create_registration(db, registration):
     _action_text = "Confirm Your Ticket Purchase"
     _first_name = registration.get("first_name", "Pythonista").split()[0]
     last_name = registration.get("last_name", "Participant").split()[-1]
-    registration_id = uuid4()
 
     await insert(db, "registrations", registration)
+    if is_student:
+        # TODO: send email to user about student proof submission and review process
+        # TODO save student proof in a separate table and link it to the registration for easier management and review process
+        return MessageResponse(message="Student registration successful. Your student proof is under review.")
+
     await send_email_for_confirme_your_ticket_purchase(to=_to, action_url=_action_url, action_text=_action_text, first_name=_first_name, last_name=last_name)
     return MessageResponse(message="Registration successful")
 
@@ -44,3 +48,10 @@ async def update_registration(db, registration_update: RegistrationUpdate):
     await send_email_for_ticket_puchase_confirmation(to=existing_registration[0]['email'], action_url=action_url, action_text=action_text, first_name=existing_registration[0]['full_name'].split()[
         0], last_name=existing_registration[0]['full_name'].split()[-1])
     return MessageResponse(message="Registration updated successfully")
+
+
+async def submit_student_ticket(db, registration):
+    """
+    Submit a student ticket registration.
+    """
+    # This function can be implemented to handle student ticket submissions, including processing student proof and sending confirmation emails.

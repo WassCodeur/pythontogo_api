@@ -14,3 +14,4 @@ nanoid==2.0.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 paydunya==1.0.7
+imagekitio==5.5.2
