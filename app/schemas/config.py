@@ -32,3 +32,7 @@ class Config(BaseModel):
     imagekit_public_key: str
     imagekit_private_key: str
     imagekit_url_endpoint: str
+    student_pass_template_url: str
+    professional_pass_template_url: str
+    premium_pass_template_url: str
+    dinner_pass_template_url: str

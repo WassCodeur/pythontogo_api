@@ -11,7 +11,7 @@ imagekit = ImageKit(
 URL_ENDPOINT = settings.imagekit_url_endpoint
 
 
-async def upload_image_base64_url(image_name, base64_string, folder=""):
+def upload_image_base64_url(image_name, base64_string, folder=""):
     try:
         upload_response = imagekit.files.upload(
             file=base64.b64decode(base64_string),

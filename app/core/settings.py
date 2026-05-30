@@ -37,7 +37,11 @@ settings = Config(
     paydunya_master_key=config("PAYDUNYA_MASTER_KEY"),
     imagekit_private_key=config("IMAGEKIT_PRIVATE_KEY"),
     imagekit_public_key=config("IMAGEKIT_PUBLIC_KEY"),
-    imagekit_url_endpoint=config("IMAGEKIT_URL_ENDPOINT")
+    imagekit_url_endpoint=config("IMAGEKIT_URL_ENDPOINT"),
+    student_pass_template_url=config("STUDENT_PASS_TEMPLATE_URL"),
+    professional_pass_template_url=config("PROFESSIONAL_PASS_TEMPLATE_URL"),
+    premium_pass_template_url=config("PREMIUM_PASS_TEMPLATE_URL"),
+    dinner_pass_template_url=config("DINNER_PASS_TEMPLATE_URL")
 )
 
 

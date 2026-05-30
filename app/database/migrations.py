@@ -407,6 +407,8 @@ CREATE_TABLE_QUERIES = [
         registration_id UUID NOT NULL,
         file_url TEXT NOT NULL,
         file_type VARCHAR(255) NOT NULL,
+        is_reviewed BOOLEAN NOT NULL DEFAULT FALSE,
+        is_approved BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         CONSTRAINT fk_student_proofs_registration

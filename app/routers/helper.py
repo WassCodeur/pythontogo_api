@@ -45,7 +45,8 @@ async def submit_ticket(request: Request, payload: TicketSubmissionPayload, even
             "success_page_url": None,
             "cancel_page_url": None
         }
-        if payload.ticket.isStudent:
+        is_student = payload.ticket.isStudent or False
+        if is_student:
             studentProof = payload.studentProof
             MIME_EXTENSION_MAP = {
                 "image/jpeg": "jpg",
@@ -58,18 +59,24 @@ async def submit_ticket(request: Request, payload: TicketSubmissionPayload, even
                 raise HTTPException(
                     status_code=400, detail="Unsupported file type for student proof")
             image_name = f"{payload.buyer.fullName}_{payload.ticket.id}.{file_extension}"
-            imagekitresponse = await upload_image_base64_url(image_name, studentProof.base64, folder="student_ids")
-            return {"message": "Student ticket submitted successfully", "ticket": payload.ticket}
-        else:
-            # Process regular ticket submission
-            async with httpx.AsyncClient() as client:
-                response = await client.post(f"{base_url}/register/{event_code}", headers=header, json=registration_data)
-                # Debugging line to check the response
-                response_data = response.json()
-                if response.status_code != 201:
-                    raise HTTPException(
-                        status_code=response.status_code, detail="Failed to submit ticket")
-            return response_data
+            try:
+                imagekitresponse = upload_image_base64_url(
+                    image_name, studentProof.base64, folder="student_ids")
+                registration_data["file_url"] = imagekitresponse.url
+                registration_data["file_type"] = studentProof.mimeType
+            except Exception as e:
+                logger.error(f"Error uploading student proof: {str(e)}")
+                raise HTTPException(
+                    status_code=500, detail="Failed to upload student proof")
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{base_url}/register/{event_code}?is_student={is_student}", headers=header, json=registration_data)
+            # Debugging line to check the response
+            response_data = response.json()
+            if response.status_code != 201:
+                raise HTTPException(
+                    status_code=response.status_code, detail="Failed to submit ticket")
+        return response_data
     except Exception as e:
         # Log the error for debugging
         logger.error(f"Error processing ticket submission: {str(e)}")

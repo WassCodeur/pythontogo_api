@@ -8,6 +8,7 @@ from app.core.settings import settings
 from app.routers.api import api_routers
 from app.routers.notifications import api_router as notifications_router
 from app.webhooks.payments_callback import api_router as payments_callback_router
+from app.core.settings import logger, settings
 
 origins = []
 if settings.env == "development":
@@ -75,6 +76,8 @@ async def welcome():
         "author": "Python Software Community Togo",
         "documentations": docs_url
     }
+    logger.info(f"SMTP_SERVER={settings.smtp_server}")
+    logger.info(f"SMTP_PORT={settings.smtp_port}")
     return message
 
 

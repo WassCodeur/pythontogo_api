@@ -15,3 +15,5 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 paydunya==1.0.7
 imagekitio==5.5.2
+qrcode==8.2
+pillow==12.2.0

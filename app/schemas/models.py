@@ -518,6 +518,8 @@ class RegistrationBase(BaseModel):
     shared_with_sponsors: bool = False
     success_page_url: str | None = None
     cancel_page_url: str | None = None
+    file_url: str | None = None
+    file_type: str | None = None
 
 
 class RegistrationCreate(RegistrationBase):
