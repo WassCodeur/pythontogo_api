@@ -26,7 +26,7 @@ base_url = f"{base_url}/{settings.root_path.strip('/')}" if settings.root_path e
 
 
 @api_router.post("/register/{event_code}", status_code=status.HTTP_201_CREATED)
-async def register_for_event(request: Request, registration: RegistrationCreate, event_code: str, background_tasks: BackgroundTasks, db=Depends(get_db_connection), is_student=False):
+async def register_for_event(request: Request, registration: RegistrationCreate, event_code: str, background_tasks: BackgroundTasks, db=Depends(get_db_connection), is_student="No"):
     """
     Register a user for an event.
     """
@@ -49,6 +49,10 @@ async def register_for_event(request: Request, registration: RegistrationCreate,
                 status_code=status.HTTP_400_BAD_REQUEST, detail=f"Not enough slots available for the selected ticket. Available quantity: {ticket['quantity']}")
 
         registration_id = uuid4()
+        success_page_url = registration.success_page_url if registration.success_page_url and registration.success_page_url.startswith(
+            "http") else f"{base_url}/checkout/payment-success"
+        cancel_page_url = registration.cancel_page_url if registration.cancel_page_url and registration.cancel_page_url.startswith(
+            "http") else f"{base_url}/checkout/payment-cancel"
         registration_data = {
             "id": str(registration_id),
             "event_id": event_existing[0]["id"],
@@ -75,10 +79,10 @@ async def register_for_event(request: Request, registration: RegistrationCreate,
             "unit_price": registration.ticket_price,
             "quantity": registration.quantity,
             "name": registration.ticket_type,
-            "success_page_url": (registration.success_page_url and registration.success_page_url.startswith("http")) or f"{base_url}/checkout/payment-success",
-            "cancel_page_url": (registration.cancel_page_url and registration.cancel_page_url.startswith("http")) or f"{base_url}/checkout/payment-cancel"
+            "success_page_url": success_page_url,
+            "cancel_page_url": cancel_page_url
         }
-        if is_student:
+        if is_student in ["yes", "Yes", "YES", True, "true", "True", "TRUE"]:
             student_proof = {
                 "id": str(uuid4()),
                 "full_name": registration.full_name,

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException, status
-from app.core.settings import settings
+from app.core.settings import settings, logger
 from app.schemas.payment import Payment
 from app.payments.paydunya_service import create_invoice
 
@@ -26,6 +26,7 @@ def create_payment(payment: Payment):
 
         return {"payment_url": url}
     except Exception as e:
+        logger.error(f"Error creating payment: {str(e)}")
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(

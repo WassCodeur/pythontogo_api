@@ -1,22 +1,3 @@
-"""
-PyCon Togo 26 — Générateur de tickets
-======================================
-Coordonnées basées sur le SVG officiel du template (595x238 px).
-
-Usage:
-    # Ticket unique
-    python generate_ticket.py --name "Koffi Mensah" --id "#55T99AB" \
-        --pass "Student Pass" --qr "https://pycon.pytogo.org/ticket/55T99AB"
-
-    # Batch depuis un CSV
-    python generate_ticket.py --csv participants.csv
-
-Dépendances:
-    pip install Pillow qrcode requests
-
-CSV attendu (avec header):
-    name,ticket_id,pass_type,qr_data,day1,day2
-"""
 
 import base64
 import os
@@ -45,10 +26,6 @@ ZONE_INFO = (475, 40, 42, 180)
 # Couleurs
 COL_NAME = (180, 230,  80, 255)  # vert lime
 COL_ID = (160, 160, 160, 255)  # gris clair
-COL_DAY = (140, 140, 140, 255)  # gris
-COL_PASS = (30,  30,  30, 255)  # quasi-noir sur fond vert
-
-# ── HELPERS ────────────────────────────────────────────────────────────────────
 
 
 def load_font(path, size):

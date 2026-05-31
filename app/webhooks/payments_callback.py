@@ -50,7 +50,8 @@ async def payments_callback(request: Request, background_tasks: BackgroundTasks,
                 "payment_link": payload.get("data", {}).get("receipt_url", "")
             }
 
-            background_tasks.add_task(update_registration, db, updated_data)
+            background_tasks.add_task(
+                update_registration, db, updated_data, request)
 
             return {"message": "callback received successfully"}
 

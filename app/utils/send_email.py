@@ -8,6 +8,7 @@ from app.utils.generate_email_htmal_format import generate_email_content
 from fastapi import HTTPException, status
 from app.utils.generate_ticket import generate_ticket
 from app.utils.render_pass_email import render_pass_email
+from app.utils.student_proof_of_enrollment import render_student_proof_under_review_email
 
 
 def send_email(to, first_message, second_message, subject, action_url, action_text, business_name=settings.business_name, greeting="Cher Utilisateur"):
@@ -150,6 +151,19 @@ def send_email_for_pass(to, first_name, full_name, ticket_id, number_of_slots=1,
         return
 
 
+def send_email_for_student_proof_of_enrollment(to, first_name, full_name, proof_id, submission_date, document_name, document_url):
+    subject = f"Your PyCon Togo 2026 Proof of Enrollment - Under Review"
+    try:
+        email_content = render_student_proof_under_review_email(
+            first_name, full_name, proof_id, submission_date, document_name, document_url)
+        send_email_new(to=to, text_msg="",
+                       html_msg=email_content, subject=subject,)
+    except Exception as e:
+        logger.error(f"Failed to send proof of enrollment email to {to}: {e}")
+        return
+
+
 if __name__ == "__main__":
-    send_email_for_pass(to="wasscodeur228@gmail.com", first_name="Wass",
-                        full_name="Wasscodeur", ticket_id="1234567890", pass_type="professional")
+
+    send_email_for_student_proof_of_enrollment(
+        to="wasscodeur228@gmail.com", first_name="Wass", full_name="Wasscodeur", proof_id="1234567890", submission_date="2023-10-10", document_name="Proof of Enrollment.pdf", document_url="https://example.com/proof_of_enrollment.pdf")

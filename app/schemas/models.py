@@ -630,6 +630,8 @@ class TicketSubmissionPayload(BaseModel):
     consent: TicketConsentPayload
     coupon: str | None = None
     studentProof: TicketStudentProofPayload | None = None
+    success_page_url: str | None = None
+    cancel_page_url: str | None = None
 
 
 class StudentProof(RegistrationCreate):

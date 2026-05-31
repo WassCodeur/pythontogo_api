@@ -42,11 +42,11 @@ async def submit_ticket(request: Request, payload: TicketSubmissionPayload, even
             "agreed_to_code_of_conduct": payload.consent.codeOfConduct,
             "agreed_to_privacy_policy": payload.consent.privacyPolicy,
             "shared_with_sponsors": payload.consent.partnerSharing,
-            "success_page_url": None,
-            "cancel_page_url": None
+            "success_page_url": payload.success_page_url,
+            "cancel_page_url": payload.cancel_page_url
         }
         is_student = payload.ticket.isStudent or False
-        if is_student:
+        if is_student in ["yes", "Yes", "YES", True, "true", "True", "TRUE"]:
             studentProof = payload.studentProof
             MIME_EXTENSION_MAP = {
                 "image/jpeg": "jpg",
@@ -58,10 +58,10 @@ async def submit_ticket(request: Request, payload: TicketSubmissionPayload, even
             if not file_extension:
                 raise HTTPException(
                     status_code=400, detail="Unsupported file type for student proof")
-            image_name = f"{payload.buyer.fullName}_{payload.ticket.id}.{file_extension}"
+            document_name = f"{payload.buyer.fullName}_{payload.ticket.id[:8]}_proof.{file_extension}"
             try:
                 imagekitresponse = upload_image_base64_url(
-                    image_name, studentProof.base64, folder="student_ids")
+                    document_name, studentProof.base64, folder="student_ids")
                 registration_data["file_url"] = imagekitresponse.url
                 registration_data["file_type"] = studentProof.mimeType
             except Exception as e:
