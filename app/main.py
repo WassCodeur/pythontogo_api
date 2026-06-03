@@ -47,6 +47,8 @@ async def lifespan(app: FastAPI):
         await app.state.redis_client.close()
 
 
+_is_dev = settings.env in ["dev", "local", "development"]
+
 app = FastAPI(
     title=settings.app_name,
     version="2.1.0",
@@ -54,7 +56,11 @@ app = FastAPI(
         "name": "Apache 2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    lifespan=lifespan)
+    lifespan=lifespan,
+    openapi_url="/openapi.json" if _is_dev else None,
+    docs_url="/docs"            if _is_dev else None,
+    redoc_url="/redoc"          if _is_dev else None,
+)
 
 
 app.add_middleware(

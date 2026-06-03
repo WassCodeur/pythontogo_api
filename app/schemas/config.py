@@ -25,14 +25,14 @@ class Config(BaseModel):
     smtp_port: int = 587
     smtp_user: str = "user"
     smtp_password: str = "password"
-    paydunya_public_key: str
-    paydunya_private_key: str
-    paydunya_token: str
-    paydunya_master_key: str
-    imagekit_public_key: str
-    imagekit_private_key: str
-    imagekit_url_endpoint: str
-    student_pass_template_url: str
-    professional_pass_template_url: str
-    premium_pass_template_url: str
-    dinner_pass_template_url: str
+    paydunya_public_key: str | None = None
+    paydunya_private_key: str | None = None
+    paydunya_token: str | None = None
+    paydunya_master_key: str | None = None
+    imagekit_public_key: str | None = None
+    imagekit_private_key: str | None = None
+    imagekit_url_endpoint: str | None = None
+    student_pass_template_url: str | None = None
+    professional_pass_template_url: str | None = None
+    premium_pass_template_url: str | None = None
+    dinner_pass_template_url: str | None = None

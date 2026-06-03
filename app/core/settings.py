@@ -31,17 +31,17 @@ settings = Config(
     smtp_port=config("SMTP_PORT", default=587, cast=int),
     smtp_user=config("SMTP_USER", default="user"),
     smtp_password=config("SMTP_PASSWORD", default="password"),
-    paydunya_public_key=config("PAYDUNYA_PUBLIC_KEY"),
-    paydunya_private_key=config("PAYDUNYA_PRIVATE_KEY"),
-    paydunya_token=config("PAYDUNYA_TOKEN"),
-    paydunya_master_key=config("PAYDUNYA_MASTER_KEY"),
-    imagekit_private_key=config("IMAGEKIT_PRIVATE_KEY"),
-    imagekit_public_key=config("IMAGEKIT_PUBLIC_KEY"),
-    imagekit_url_endpoint=config("IMAGEKIT_URL_ENDPOINT"),
-    student_pass_template_url=config("STUDENT_PASS_TEMPLATE_URL"),
-    professional_pass_template_url=config("PROFESSIONAL_PASS_TEMPLATE_URL"),
-    premium_pass_template_url=config("PREMIUM_PASS_TEMPLATE_URL"),
-    dinner_pass_template_url=config("DINNER_PASS_TEMPLATE_URL")
+    paydunya_public_key=config("PAYDUNYA_PUBLIC_KEY", default=None),
+    paydunya_private_key=config("PAYDUNYA_PRIVATE_KEY", default=None),
+    paydunya_token=config("PAYDUNYA_TOKEN", default=None),
+    paydunya_master_key=config("PAYDUNYA_MASTER_KEY", default=None),
+    imagekit_private_key=config("IMAGEKIT_PRIVATE_KEY", default=None),
+    imagekit_public_key=config("IMAGEKIT_PUBLIC_KEY", default=None),
+    imagekit_url_endpoint=config("IMAGEKIT_URL_ENDPOINT", default=None),
+    student_pass_template_url=config("STUDENT_PASS_TEMPLATE_URL", default=None),
+    professional_pass_template_url=config("PROFESSIONAL_PASS_TEMPLATE_URL", default=None),
+    premium_pass_template_url=config("PREMIUM_PASS_TEMPLATE_URL", default=None),
+    dinner_pass_template_url=config("DINNER_PASS_TEMPLATE_URL", default=None)
 )
 
 

@@ -86,6 +86,14 @@ BEGIN
             'manual_correction'
         );
     END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'job_location_enum') THEN
+        CREATE TYPE job_location_enum AS ENUM ('remote', 'onsite', 'hybrid');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'contract_type_enum') THEN
+        CREATE TYPE contract_type_enum AS ENUM ('full-time', 'part-time', 'internship', 'contract');
+    END IF;
 END
 $$;
 """
@@ -417,6 +425,29 @@ CREATE_TABLE_QUERIES = [
             ON DELETE CASCADE
     );""",
 
+    """
+    CREATE TABLE IF NOT EXISTS job_offers (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_id UUID NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        company VARCHAR(255) NOT NULL,
+        logo_url TEXT,
+        location job_location_enum NOT NULL,
+        contract_type contract_type_enum NOT NULL,
+        apply_url TEXT NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        salary_range VARCHAR(255),
+        application_deadline TIMESTAMPTZ,
+        tags JSONB,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT fk_job_offers_event
+            FOREIGN KEY (event_id)
+            REFERENCES events(id)
+            ON DELETE CASCADE,
+        CONSTRAINT uq_job_offers_event_company_title UNIQUE (event_id, company, title)
+    );""",
 
 ]
 
@@ -424,6 +455,8 @@ CREATE_TABLE_QUERIES = [
 CREATE_INDEX_QUERIES = [
     "CREATE INDEX IF NOT EXISTS idx_sponsors_partners_event_id ON sponsors_partners(event_id);",
     "CREATE INDEX IF NOT EXISTS idx_api_keys_event_id ON api_keys(event_id);",
+    "CREATE INDEX IF NOT EXISTS idx_job_offers_event_id ON job_offers(event_id);",
+    "CREATE INDEX IF NOT EXISTS idx_job_offers_is_active ON job_offers(is_active);",
 ]
 
 
