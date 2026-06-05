@@ -1,13 +1,65 @@
-.env
-secret*
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Environnements virtuels
 .venv/
 venv/
-__pycache__/
-*.pyc
+env/
+ENV/
+
+# Variables d'environnement — ne jamais commiter
+.env
+app/.env
+!*.env.example
+!app/.env.example
+
+# Secrets
+secret*
+*.key
+*.pem
+
+# Bases de données locales
+*.db
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Tests
+.coverage
+.pytest_cache/
+.mypy_cache/
+.tox/
+htmlcov/
+coverage.xml
 mock*
 fake*
 test*
 tests/
-.vscode/
-.idea/
-.DS_Store
+
+# Divers
+*.bak
+*.tmp
+*.swp
+*.swo

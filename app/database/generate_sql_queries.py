@@ -12,9 +12,9 @@ def normalize_value(value):
 
     Returns:
     -------
-        The normalized value, ready for use in SQL queries. For dictionaries, it returns a Jsonb object.
+        The normalized value, ready for use in SQL queries. For dictionaries and lists, it returns a Jsonb object.
     """
-    if isinstance(value, dict):
+    if isinstance(value, (dict, list)):
         return Jsonb(value)
     return value
 
@@ -22,7 +22,7 @@ def normalize_value(value):
 def normalize_data(data: dict):
     return {
         k: str(v) if not isinstance(
-            v, (int, float, bool, dict, type(None))) else v
+            v, (int, float, bool, dict, list, type(None))) else v
         for k, v in data.items()
     }
 

@@ -637,3 +637,60 @@ class TicketSubmissionPayload(BaseModel):
 class StudentProof(RegistrationCreate):
     file_url: str
     file_type: str
+
+
+# JOB BOARD
+
+class JobLocation(str, Enum):
+    REMOTE = "remote"
+    ONSITE = "onsite"
+    HYBRID = "hybrid"
+
+
+class ContractType(str, Enum):
+    FULL_TIME = "full-time"
+    PART_TIME = "part-time"
+    INTERNSHIP = "internship"
+    CONTRACT = "contract"
+
+
+class JobOfferBase(BaseModel):
+    title: str
+    description: str
+    company: str
+    logo_url: str | None = None
+    location: JobLocation
+    contract_type: ContractType
+    country: str | None = None
+    apply_url: str
+    is_active: bool = True
+    salary_range: str | None = None
+    application_deadline: datetime | None = None
+    tags: List[str] | None = None
+
+
+class JobOfferCreate(JobOfferBase):
+    pass
+
+
+class JobOfferUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    company: str | None = None
+    logo_url: str | None = None
+    location: JobLocation | None = None
+    contract_type: ContractType | None = None
+    country: str | None = None
+    apply_url: str | None = None
+    is_active: bool | None = None
+    salary_range: str | None = None
+    application_deadline: datetime | None = None
+    tags: List[str] | None = None
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc))
+
+
+class JobOfferSummary(JobOfferBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
