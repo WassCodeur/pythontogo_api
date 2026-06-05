@@ -442,7 +442,6 @@ CREATE_TABLE_QUERIES = [
         tags JSONB,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        CONSTRAINT uq_job_offers_company_title UNIQUE (company, title)
     );""",
 
 ]

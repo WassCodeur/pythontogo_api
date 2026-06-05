@@ -49,16 +49,6 @@ async def add_job_offer(db, job_offer: JobOfferCreate, background_tasks: Backgro
     try:
         job_offer_data = job_offer.model_dump(mode="json")
 
-        existing = await select(db, "job_offers", filter={
-            "title": job_offer_data["title"],
-            "company": job_offer_data["company"],
-        })
-        if existing:
-            raise HTTPException(
-                status_code=400,
-                detail="A job offer with the same title and company already exists",
-            )
-
         job_offer_data["id"] = str(uuid4())
         background_tasks.add_task(insert, db, "job_offers", job_offer_data)
         return {"message": "Job offer created successfully"}
