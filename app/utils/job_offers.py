@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from fastapi import BackgroundTasks, HTTPException
 
-from app.database.orm import delete, insert, select, select_with_join, update
+from app.database.orm import delete, insert, select, update
 from app.schemas.models import JobOfferCreate, JobOfferUpdate
 from app.core.settings import logger
 from app.utils.helpers import remove_null_values
@@ -21,26 +21,12 @@ async def get_all_job_offers(db):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-async def get_job_offers_by_event(db, event_code: str):
+async def get_active_job_offers(db):
     try:
-        event_code = event_code.strip().upper()
-        job_offers = await select_with_join(
-            db,
-            table="job_offers",
-            join_table="events",
-            join_condition="job_offers.event_id = events.id",
-            columns=[
-                "job_offers.id", "job_offers.title", "job_offers.description",
-                "job_offers.company", "job_offers.logo_url", "job_offers.location",
-                "job_offers.contract_type", "job_offers.apply_url", "job_offers.is_active",
-                "job_offers.salary_range", "job_offers.application_deadline", "job_offers.tags",
-                "job_offers.event_id", "job_offers.created_at", "job_offers.updated_at",
-            ],
-            filter={"events.code": event_code, "job_offers.is_active": True},
-        )
+        job_offers = await select(db, "job_offers", filter={"is_active": True})
         return job_offers or []
     except Exception as e:
-        logger.error(f"Error retrieving job offers for event {event_code}: {str(e)}")
+        logger.error(f"Error retrieving active job offers: {str(e)}")
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -59,28 +45,21 @@ async def get_job_offer_by_id(db, job_offer_id: str):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-async def add_job_offer(db, job_offer: JobOfferCreate, event_code: str, background_tasks: BackgroundTasks):
+async def add_job_offer(db, job_offer: JobOfferCreate, background_tasks: BackgroundTasks):
     try:
-        event_code = event_code.strip().upper()
         job_offer_data = job_offer.model_dump(mode="json")
 
-        event_data = await select(db, "events", filter={"code": event_code})
-        if not event_data:
-            raise HTTPException(status_code=404, detail="Event not found")
-
-        event_id = event_data[0]["id"]
         existing = await select(db, "job_offers", filter={
             "title": job_offer_data["title"],
             "company": job_offer_data["company"],
-            "event_id": event_id,
         })
         if existing:
             raise HTTPException(
                 status_code=400,
-                detail="A job offer with the same title and company already exists for this event",
+                detail="A job offer with the same title and company already exists",
             )
 
-        job_offer_data.update({"id": str(uuid4()), "event_id": event_id})
+        job_offer_data["id"] = str(uuid4())
         background_tasks.add_task(insert, db, "job_offers", job_offer_data)
         return {"message": "Job offer created successfully"}
     except Exception as e:

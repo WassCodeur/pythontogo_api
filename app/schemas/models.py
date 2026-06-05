@@ -661,6 +661,7 @@ class JobOfferBase(BaseModel):
     logo_url: str | None = None
     location: JobLocation
     contract_type: ContractType
+    country: str | None = None
     apply_url: str
     is_active: bool = True
     salary_range: str | None = None
@@ -679,6 +680,7 @@ class JobOfferUpdate(BaseModel):
     logo_url: str | None = None
     location: JobLocation | None = None
     contract_type: ContractType | None = None
+    country: str | None = None
     apply_url: str | None = None
     is_active: bool | None = None
     salary_range: str | None = None
@@ -690,6 +692,5 @@ class JobOfferUpdate(BaseModel):
 
 class JobOfferSummary(JobOfferBase):
     id: UUID
-    event_id: UUID
     created_at: datetime
     updated_at: datetime
