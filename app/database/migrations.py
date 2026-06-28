@@ -441,7 +441,7 @@ CREATE_TABLE_QUERIES = [
         application_deadline TIMESTAMPTZ,
         tags JSONB,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );""",
 
 ]
