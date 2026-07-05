@@ -21,7 +21,7 @@ def verify_paydunya_hash(hash):
 
 
 @api_router.post("/paydunya/callback")
-async def payments_callback(request: Request, background_tasks: BackgroundTasks, db=Depends(get_db_connection)):
+async def payments_callback(request: Request, background_tasks: BackgroundTasks):
     try:
         body = await request.body()
         text = body.decode()
@@ -51,7 +51,7 @@ async def payments_callback(request: Request, background_tasks: BackgroundTasks,
             }
 
             background_tasks.add_task(
-                update_registration, db, updated_data, request)
+                update_registration, request.app.state.db_pool, request.app.state.redis_client,  updated_data)
 
             return {"message": "callback received successfully"}
 

@@ -694,3 +694,7 @@ class JobOfferSummary(JobOfferBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
+
+
+class AttendeeID(BaseModel):
+    attendee_id: UUID

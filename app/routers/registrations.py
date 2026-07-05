@@ -1,4 +1,4 @@
-from app.database.orm import select
+from app.database.orm import select, select_with_join
 from app.utils.registrations import (
     create_registration,
 )
@@ -11,7 +11,8 @@ from app.schemas.models import (
     RegistrationCreate,
     RegistrationSummary,
     RegistrationUpdate,
-    StudentProof
+    StudentProof,
+    AttendeeID
 )
 from app.core.settings import logger, settings
 from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
@@ -32,11 +33,14 @@ async def register_for_event(request: Request, registration: RegistrationCreate,
     """
     try:
         auth = request.headers.get("Authorization")
-        event_existing = await select(db, "events", filter={"code": event_code.upper()})
-        student_proof = {}
+        event_existing = await select_with_join(db, table="events", join_table="tickets", join_condition="events.id = tickets.event_id", filter={"code": event_code.upper(), "tickets.id": registration.ticket_id}, columns=["tickets.event_id", "tickets.id", "tickets.name", "tickets.price", "tickets.quantity"])
         if not event_existing:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+                status_code=status.HTTP_404_NOT_FOUND, detail="event or ticket does not exist")
+        if event_existing[0]["quantity"] < 1 or event_existing[0]["quantity"] < registration.quantity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=f"Not enough slots available for the selected ticket. Available quantity: {event_existing[0]['quantity']}")
+
         if not auth or not auth.startswith("Bearer "):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
@@ -48,30 +52,11 @@ async def register_for_event(request: Request, registration: RegistrationCreate,
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=f"Not enough slots available for the selected ticket. Available quantity: {ticket['quantity']}")
 
-        registration_id = uuid4()
         success_page_url = registration.success_page_url if registration.success_page_url and registration.success_page_url.startswith(
             "http") else f"{base_url}/checkout/payment-success"
         cancel_page_url = registration.cancel_page_url if registration.cancel_page_url and registration.cancel_page_url.startswith(
             "http") else f"{base_url}/checkout/payment-cancel"
-        registration_data = {
-            "id": str(registration_id),
-            "event_id": event_existing[0]["id"],
-            "full_name": registration.full_name,
-            "email": registration.email,
-            "whatsapp_number": registration.whatsapp_number,
-            "ticket_type": registration.ticket_type,
-            "ticket_id": registration.ticket_id,
-            "ticket_price": registration.ticket_price,
-            "ticket_quantity": registration.quantity,
-            "attendance_status": registration.attendance_status,
-            "payment_status": registration.payment_status,
-            "dietary_restrictions": registration.dietary_restrictions,
-            "payment_reference": registration.payment_reference,
-            "payment_link": registration.payment_link,
-            "agreed_to_code_of_conduct": registration.agreed_to_code_of_conduct,
-            "agreed_to_privacy_policy": registration.agreed_to_privacy_policy,
-            "shared_with_sponsors": registration.shared_with_sponsors
-        }
+
         payment_data = {
             "amount": registration.ticket_price * registration.quantity,
             "callback_url": f"{base_url}/webhooks/paydunya/callback",
@@ -82,32 +67,36 @@ async def register_for_event(request: Request, registration: RegistrationCreate,
             "success_page_url": success_page_url,
             "cancel_page_url": cancel_page_url
         }
-        if is_student in ["yes", "Yes", "YES", True, "true", "True", "TRUE"]:
-            student_proof = {
-                "id": str(uuid4()),
-                "full_name": registration.full_name,
-                "email": registration.email,
-                "registration_id": str(registration_id),
-                "file_url": registration.file_url,
-                "file_type": registration.file_type,
-                "is_reviewed": False,
-                "is_approved": False
-            }
+
         async with httpx.AsyncClient() as client:
             response = await client.post(f"{base_url}/checkout/payment", headers={"Authorization": auth}, json=payment_data)
             response.raise_for_status()
             result = response.json()
             payment_token = result.get("payment_url").split(
-                "/")[-1]  # Extract token from URL
-            registration_data["payment_reference"] = payment_token
-            registration_data["payment_link"] = result.get("payment_url")
+                "/")[-1]
+
+            payment_link = result.get("payment_url")
+            payment_reference = payment_token
 
             background_tasks.add_task(
-                create_registration, db, registration_data, student_proof, is_student)
+                create_registration, request.app.state.db_pool, registration, payment_link, payment_reference, event_existing[0]["event_id"], is_student)
 
             return result
     except Exception as e:
         logger.error(f"Error creating registration: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@api_router.post("/registrations/student/approve")
+async def _approve_student_registration(registration_id: AttendeeID, db=Depends(get_db_connection)):
+    try:
+        from app.utils.registrations import approve_student_registration
+        result = await approve_student_registration(db, registration_id.attendee_id)
+        return result
+    except Exception as e:
+        logger.error(f"Error approving student registration: {str(e)}")
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail="Internal server error")
