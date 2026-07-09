@@ -314,7 +314,7 @@ CREATE_TABLE_QUERIES = [
             ON DELETE CASCADE,
         CONSTRAINT fk_sessions_venue
             FOREIGN KEY (venue_id)
-            REFERENCES events(id)
+            REFERENCES venues(id)
             ON DELETE CASCADE,
         CONSTRAINT fk_sessions_track
             FOREIGN KEY (track_id)
@@ -376,6 +376,27 @@ CREATE_TABLE_QUERIES = [
             REFERENCES events(id)
             ON DELETE CASCADE
     );""",
+
+    """CREATE TABLE IF NOT EXISTS vouchers (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        code VARCHAR(255) NOT NULL UNIQUE,
+        description TEXT,
+        discount_percentage NUMERIC(5, 2) CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
+        discount_amount NUMERIC(10, 2) CHECK (discount_amount >= 0),
+        number_of_uses INTEGER CHECK (number_of_uses >= 0),
+        number_of_uses_left INTEGER CHECK (number_of_uses_left >= 0),
+        applicable_ticket_ids JSONB,
+        applicable_event_ids JSONB,
+        applicable_user_emails JSONB,
+        applicable_user_ids JSONB,
+        already_used_by_user_emails JSONB,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        valid_from TIMESTAMPTZ,
+        valid_until TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );""",
+
     """
     CREATE TABLE IF NOT EXISTS registrations (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -392,6 +413,8 @@ CREATE_TABLE_QUERIES = [
         dietary_restrictions TEXT,
         payment_reference TEXT,
         payment_link TEXT,
+        voucher_id UUID,
+        voucher_code VARCHAR(255),
         agreed_to_code_of_conduct BOOLEAN NOT NULL DEFAULT FALSE,
         agreed_to_privacy_policy BOOLEAN NOT NULL DEFAULT FALSE,
         shared_with_sponsors BOOLEAN NOT NULL DEFAULT FALSE,
@@ -401,6 +424,10 @@ CREATE_TABLE_QUERIES = [
             FOREIGN KEY (event_id)
             REFERENCES events(id)
             ON DELETE CASCADE,
+        CONSTRAINT fk_registrations_voucher
+            FOREIGN KEY (voucher_id)
+            REFERENCES vouchers(id)
+            ON DELETE SET NULL,
         CONSTRAINT fk_registrations_ticket
             FOREIGN KEY (ticket_id)
             REFERENCES tickets(id)
@@ -444,6 +471,7 @@ CREATE_TABLE_QUERIES = [
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );""",
 
+
 ]
 
 
@@ -452,6 +480,7 @@ CREATE_INDEX_QUERIES = [
     "CREATE INDEX IF NOT EXISTS idx_api_keys_event_id ON api_keys(event_id);",
     "CREATE INDEX IF NOT EXISTS idx_job_offers_is_active ON job_offers(is_active);",
     "CREATE INDEX IF NOT EXISTS idx_job_offers_company ON job_offers(company);",
+
 ]
 
 

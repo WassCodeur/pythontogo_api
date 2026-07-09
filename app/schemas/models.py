@@ -504,8 +504,8 @@ class RegistrationBase(BaseModel):
     whatsapp_number: str | None = None
     ticket_type: str
     ticket_id: UUID
-    ticket_price: int = Field(..., ge=200,
-                              description="The price of the ticket, must be at least 200")
+    ticket_price: float = Field(..., ge=0,
+                                description="The price of the ticket, must be possitive")
     quantity: int = Field(..., ge=1,
                           description="The quantity of tickets, must be at least 1")
     attendance_status: str = "pending"
@@ -520,6 +520,8 @@ class RegistrationBase(BaseModel):
     cancel_page_url: str | None = None
     file_url: str | None = None
     file_type: str | None = None
+    voucher_id: UUID | None = None
+    voucher_code: str | None = None
 
 
 class RegistrationCreate(RegistrationBase):
@@ -617,7 +619,7 @@ class TicketConsentPayload(BaseModel):
 class TicketPayload(BaseModel):
     id: str
     name: str
-    unitPrice: int = Field(gt=0)
+    unitPrice: float = Field(ge=0.0)
     currency: str
     isStudent: bool = False
 
@@ -625,7 +627,7 @@ class TicketPayload(BaseModel):
 class TicketSubmissionPayload(BaseModel):
     ticket: TicketPayload
     quantity: int = Field(gt=0)
-    total: int = Field(gt=0)
+    total: float = Field(ge=0.0)
     buyer: TicketBuyerPayload
     consent: TicketConsentPayload
     coupon: str | None = None
@@ -698,3 +700,61 @@ class JobOfferSummary(JobOfferBase):
 
 class AttendeeID(BaseModel):
     attendee_id: UUID
+
+
+class VoucherBase(BaseModel):
+    prefix: str
+    description: str | None = None
+    discount_percentage: float | None = Field(
+        default=None, ge=0, le=100, description="Discount percentage must be between 0 and 100")
+    discount_amount: float | None = Field(
+        default=None, ge=0, description="Discount amount must be non-negative")
+    number_of_uses: int | None = Field(
+        default=None, ge=0, description="Number of uses must be non-negative")
+    number_of_uses_left: int | None = Field(
+        default=None, ge=0, description="Number of uses left must be non-negative")
+    applicable_ticket_ids: List[str] | None = None
+    applicable_event_ids: List[str] | None = None
+    applicable_user_emails: List[str] | None = None
+    applicable_user_ids: List[str] | None = None
+    is_active: bool = True
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+
+
+class VoucherCreate(VoucherBase):
+    pass
+
+
+class VoucherUpdate(BaseModel):
+    code: str | None = None
+    description: str | None = None
+    discount_percentage: float | None = Field(
+        default=None, ge=0, le=100, description="Discount percentage must be between 0 and 100")
+    discount_amount: float | None = Field(
+        default=None, ge=0, description="Discount amount must be non-negative")
+    number_of_uses: int | None = Field(
+        default=None, ge=0, description="Number of uses must be non-negative")
+    number_of_uses_left: int | None = Field(
+        default=None, ge=0, description="Number of uses left must be non-negative")
+    applicable_ticket_ids: List[UUID] | None = None
+    applicable_event_ids: List[UUID] | None = None
+    applicable_user_emails: List[str] | None = None
+    applicable_user_ids: List[UUID] | None = None
+    is_active: bool | None = None
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc))
+
+
+class VoucherSummary(VoucherBase):
+    id: UUID
+    code: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class VaucherGenerated(BaseModel):
+    code: str
+    message: str | None = "Voucher code generated successfully"

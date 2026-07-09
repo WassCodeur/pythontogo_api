@@ -19,38 +19,84 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status, Backgrou
 
 
 from app.database.connection import get_db_connection
+from app.utils.vauchers import calculate_discounted_price
 
 
 api_router = APIRouter(tags=["registrations"])
 base_url = settings.base_url.rstrip("/")
+
 base_url = f"{base_url}/{settings.root_path.strip('/')}" if settings.root_path else base_url
 
 
+async def event_ticket_reg_checker(request, event_data, registration: RegistrationCreate, ticket) -> bool:
+    """
+    Validate event ticket data.
+    """
+    auth = request.headers.get("Authorization")
+    if not event_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="event or ticket does not exist")
+    if event_data[0]["quantity"] < 1 or event_data[0]["quantity"] < registration.quantity:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Not enough slots available for the selected ticket. Available quantity: {event_data[0]['quantity']}")
+    if event_data[0]["ticket_sales_open_at"] and event_data[0]["ticket_sales_open_at"] > request.app.state.current_time:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Ticket sales have not opened yet")
+    if event_data[0]["ticket_sales_close_at"] and event_data[0]["ticket_sales_close_at"] < request.app.state.current_time:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Ticket sales have closed")
+    if not auth or not auth.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    if not ticket:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+    if ticket['quantity'] < 1 or ticket['quantity'] < registration.quantity:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Not enough slots available for the selected ticket. Available quantity: {ticket['quantity']}")
+
+
 @api_router.post("/register/{event_code}", status_code=status.HTTP_201_CREATED)
-async def register_for_event(request: Request, registration: RegistrationCreate, event_code: str, background_tasks: BackgroundTasks, db=Depends(get_db_connection), is_student="No"):
+async def register_for_event(request: Request, registration: RegistrationCreate, event_code: str, background_tasks: BackgroundTasks, db=Depends(get_db_connection), is_student=False, discount_code: str | None = None):
     """
     Register a user for an event.
     """
     try:
         auth = request.headers.get("Authorization")
-        event_existing = await select_with_join(db, table="events", join_table="tickets", join_condition="events.id = tickets.event_id", filter={"code": event_code.upper(), "tickets.id": registration.ticket_id}, columns=["tickets.event_id", "tickets.id", "tickets.name", "tickets.price", "tickets.quantity"])
-        if not event_existing:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="event or ticket does not exist")
-        if event_existing[0]["quantity"] < 1 or event_existing[0]["quantity"] < registration.quantity:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=f"Not enough slots available for the selected ticket. Available quantity: {event_existing[0]['quantity']}")
+        event_existing = await select_with_join(db, table="events", join_table="tickets", join_condition="events.id = tickets.event_id", filter={"code": event_code.upper(), "tickets.id": registration.ticket_id}, columns=["events.early_bird_sales_close_at", "events.ticket_sales_close_at", "events.ticket_sales_open_at",  "tickets.event_id", "tickets.id", "tickets.early_bird_price", "tickets.name", "tickets.price", "tickets.quantity"])
+        temp_ticket_price = int(
+            event_existing[0]["price"]) if event_existing else 0
 
-        if not auth or not auth.startswith("Bearer "):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
         ticket = await get_ticket_by_id(db, registration.ticket_id)
-        if not ticket:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
-        if ticket['quantity'] < 1 or ticket['quantity'] < registration.quantity:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=f"Not enough slots available for the selected ticket. Available quantity: {ticket['quantity']}")
+        is_voucher_valid = False
+        await event_ticket_reg_checker(request, event_existing, registration, ticket)
+        reg_existing = await select_with_join(db, table="registrations", join_table="tickets", join_condition="registrations.ticket_id = tickets.id", filter={"registrations.email": registration.email, "registrations.event_id": event_existing[0]['event_id']}, columns=["registrations.payment_status", "registrations.payment_reference", "registrations.full_name", "registrations.email", "registrations.ticket_quantity", "registrations.ticket_type", "registrations.payment_link", "registrations.ticket_id", "tickets.quantity", "tickets.name"])
+
+        if event_existing[0]["early_bird_sales_close_at"] and event_existing[0]["early_bird_sales_close_at"] >= request.app.state.current_time:
+            temp_ticket_price = int(event_existing[0]["early_bird_price"])
+
+        if discount_code:
+            discount_code = discount_code.strip().replace(" ", "-").upper()
+            from app.utils.vauchers import validate_voucher
+            voucher = await validate_voucher(request, discount_code, ticket['id'], event_existing[0]['event_id'], registration.email)
+            if not voucher:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or inapplicable voucher code")
+            # Apply the discount to the ticket price
+            is_voucher_valid = True
+            registration.voucher_id = voucher['id']
+            registration.voucher_code = voucher['code']
+            registration.ticket_price = calculate_discounted_price(
+                temp_ticket_price, voucher['discount_percentage'], voucher['discount_amount'])
+        else:
+            registration.ticket_price = temp_ticket_price
+
+        amount = int(registration.ticket_price * registration.quantity)
+
+        if amount < 200 and is_voucher_valid:
+            background_tasks.add_task(create_registration, request.app.state.db_pool, registration, "https://pycon.pytogo.org/donate",
+                                      "", event_existing[0]["event_id"], is_student, is_free_ticket=True, discount_code=discount_code, reg_existing=reg_existing)
+            return {"message": "Registration successful. You have registered for a free ticket.", "is_free_ticket": True, "payment_url": "https://pycon.pytogo.org/donate"}
 
         success_page_url = registration.success_page_url if registration.success_page_url and registration.success_page_url.startswith(
             "http") else f"{base_url}/checkout/payment-success"
@@ -58,32 +104,51 @@ async def register_for_event(request: Request, registration: RegistrationCreate,
             "http") else f"{base_url}/checkout/payment-cancel"
 
         payment_data = {
-            "amount": registration.ticket_price * registration.quantity,
+            "amount": int(amount),
             "callback_url": f"{base_url}/webhooks/paydunya/callback",
             "description": f"Registration for {event_code.upper()} - {registration.full_name}",
-            "unit_price": registration.ticket_price,
-            "quantity": registration.quantity,
+            "unit_price": int(registration.ticket_price),
+            "quantity": int(registration.quantity),
             "name": registration.ticket_type,
             "success_page_url": success_page_url,
             "cancel_page_url": cancel_page_url
         }
 
+        # TODO : Checker for existing registration with same email and event code, if exists, return a message to user to check their email for confirmation link instead of creating a new registration
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{base_url}/checkout/payment", headers={"Authorization": auth}, json=payment_data)
-            response.raise_for_status()
-            result = response.json()
-            payment_token = result.get("payment_url").split(
-                "/")[-1]
+            payment_link = "https://pycon.pytogo.org/donate"  # TODO : to be changed
+            result = {}
+            payment_reference = ""
+            result['payment_url'] = "https://pycon.pytogo.org/donate"
+            result['is_free_ticket'] = False
+            result['message'] = "Registration successful. Please proceed to payment."
+            if not reg_existing:
+                response = await client.post(f"{base_url}/checkout/payment", headers={"Authorization": auth}, json=payment_data)
+                response.raise_for_status()
+                result = response.json()
+                payment_token = result.get("payment_url").split(
+                    "/")[-1]
 
-            payment_link = result.get("payment_url")
-            payment_reference = payment_token
-
+                payment_link = result.get("payment_url")
+                payment_reference = payment_token
+            elif reg_existing[0]['payment_status'] == "pending":
+                result["payment_url"] = reg_existing[0]['payment_link']
+                payment_link = reg_existing[0]['payment_link']
+                payment_reference = reg_existing[0]['payment_reference']
+            elif reg_existing[0]['payment_status'] == "completed":
+                result['message'] = "You have already completed registration for this event."
+                payment_reference = reg_existing[0]['payment_reference']
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Bad request")
             background_tasks.add_task(
-                create_registration, request.app.state.db_pool, registration, payment_link, payment_reference, event_existing[0]["event_id"], is_student)
+                create_registration, request.app.state.db_pool, registration, payment_link, payment_reference, event_existing[0]["event_id"], is_student, is_free_ticket=False, discount_code=discount_code, reg_existing=reg_existing)
 
             return result
     except Exception as e:
         logger.error(f"Error creating registration: {str(e)}")
+        import traceback
+        traceback.print_exc()
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail="Internal server error")

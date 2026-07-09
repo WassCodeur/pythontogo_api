@@ -13,7 +13,7 @@ base_url = f"{base_url}/{settings.root_path.strip('/')}" if settings.root_path e
 
 
 @app_router.post("/ticket/submit/{event_code}")
-async def submit_ticket(request: Request, payload: TicketSubmissionPayload, event_code: str):
+async def submit_ticket(request: Request, payload: TicketSubmissionPayload, event_code: str, discount_code: str | None = None):
     try:
         # TODO - Coupon code validation can be added here if needed
         # TODO: Add validation for the payload if needed
@@ -69,8 +69,14 @@ async def submit_ticket(request: Request, payload: TicketSubmissionPayload, even
                 raise HTTPException(
                     status_code=500, detail="Failed to upload student proof")
 
+        reg_url = f"{base_url}/register/{event_code}?is_student={is_student}"
+        if discount_code:
+            discount_code = discount_code.strip().replace(" ", "-").upper()
+            reg_url += f"&discount_code={discount_code}"
+
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{base_url}/register/{event_code}?is_student={is_student}", headers=header, json=registration_data)
+
+            response = await client.post(reg_url, headers=header, json=registration_data)
             # Debugging line to check the response
             response_data = response.json()
             if response.status_code != 201:
@@ -79,6 +85,8 @@ async def submit_ticket(request: Request, payload: TicketSubmissionPayload, even
         return response_data
     except Exception as e:
         # Log the error for debugging
+        import traceback
+        traceback.print_exc()
         logger.error(f"Error processing ticket submission: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Error processing ticket submission: {str(e)}")

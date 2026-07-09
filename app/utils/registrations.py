@@ -7,9 +7,31 @@ from app.utils.send_email import send_email_for_confirme_your_ticket_purchase, s
 from json import dumps
 from fastapi import HTTPException
 from app.core.settings import logger
+from app.utils.vauchers import update_voucher, calculate_discounted_price
 
 
-async def create_registration(db_pool, registration: RegistrationCreate, payment_link, payment_reference, event_id: UUID, is_student=False):
+def validate_registration_data(registration: RegistrationCreate, reg_existing, ticket):
+    """
+    Validate the registration data.
+    """
+    if not registration.full_name:
+        raise HTTPException(
+            status_code=400, detail="Full name is required")
+    if not registration.email:
+        raise HTTPException(
+            status_code=400, detail="Email is required")
+    if not registration.whatsapp_number:
+        raise HTTPException(
+            status_code=400, detail="WhatsApp number is required")
+    if not registration.ticket_id:
+        raise HTTPException(
+            status_code=400, detail="Ticket ID is required")
+    if not registration.quantity or registration.quantity < 1:
+        raise HTTPException(
+            status_code=400, detail="Quantity must be at least 1")
+
+
+async def create_registration(db_pool, registration: RegistrationCreate,  payment_link, payment_reference, event_id: UUID, is_student=False, is_free_ticket=False, discount_code: str | None = None, reg_existing=None):
     """
     Create a new registration for an event.
     """
@@ -18,10 +40,27 @@ async def create_registration(db_pool, registration: RegistrationCreate, payment
     _action_text = "Confirm Your Ticket Purchase"
     _first_name = registration.full_name.split()[0]
     last_name = registration.full_name.split()[-1]
-    registration_id = uuid4()
+    # if not reg_existing:
+    #    reg_existing = await select_with_join(db_pool, table="registrations", join_table="tickets", join_condition="registrations.ticket_id = tickets.id", filter={"registrations.email": registration.email, "registrations.event_id": event_id}, columns=["registrations.payment_status", "registrations.full_name", "registrations.email", "registrations.ticket_quantity", "registrations.payment_link", "registrations.ticket_id", "tickets.quantity", "tickets.name"])
+
+    if reg_existing:
+        if reg_existing[0]['payment_status'] == "completed":
+            logger.info(
+                f"User {registration.email} has already completed registration for event {event_id}")
+            await send_email_for_pass(to=reg_existing[0]['email'], first_name=reg_existing[0]['full_name'].split()[0], full_name=reg_existing[0]['full_name'],
+                                      ticket_id=reg_existing[0]['ticket_id'], pass_type=reg_existing[0]['ticket_type'], number_of_slots=reg_existing[0]['ticket_quantity'])
+            return MessageResponse(message="You have already completed registration for this event.")
+        elif reg_existing[0]['payment_status'] == "pending":
+            logger.info(
+                f"User {registration.email} has already initiated registration for event {event_id}")
+            await send_email_for_confirme_your_ticket_purchase(to=reg_existing[0]['email'], action_url=reg_existing[0]['payment_link'], action_text=_action_text, first_name=reg_existing[0]['full_name'].split()[
+                0], last_name=reg_existing[0]['full_name'].split()[-1])
+            return MessageResponse(message="You have already initiated registration for this event. Please check your email to confirm your ticket purchase.")
+
+    reg_id = str(uuid4())
 
     registration_data = {
-        "id": str(registration_id),
+        "id": reg_id,
         "event_id": event_id,
         "full_name": registration.full_name,
         "email": registration.email,
@@ -37,7 +76,9 @@ async def create_registration(db_pool, registration: RegistrationCreate, payment
         "payment_link": payment_link,
         "agreed_to_code_of_conduct": registration.agreed_to_code_of_conduct,
         "agreed_to_privacy_policy": registration.agreed_to_privacy_policy,
-        "shared_with_sponsors": registration.shared_with_sponsors
+        "shared_with_sponsors": registration.shared_with_sponsors,
+        "voucher_id": registration.voucher_id,
+        "voucher_code": registration.voucher_code
     }
 
     if is_student in ["yes", "Yes", "YES", True, "true", "True", "TRUE"]:
@@ -45,7 +86,7 @@ async def create_registration(db_pool, registration: RegistrationCreate, payment
             "id": str(uuid4()),
             "full_name": registration.full_name,
             "email": registration.email,
-            "registration_id": str(registration_id),
+            "registration_id": reg_id,
             "file_url": registration.file_url,
             "file_type": registration.file_type,
             "is_reviewed": False,
@@ -53,6 +94,16 @@ async def create_registration(db_pool, registration: RegistrationCreate, payment
         }
 
     async with db_pool.connection() as connection:
+
+        if discount_code:
+            voucher = await select(connection, "vouchers", filter={"code": discount_code})
+            if voucher:
+                already_used_by_user_emails = voucher[0].get("already_used_by_user_emails", [
+                ]) if isinstance(voucher[0].get("already_used_by_user_emails"), list) else []
+                if registration.email not in already_used_by_user_emails:
+                    already_used_by_user_emails.append(registration.email)
+                await update_voucher(connection, voucher[0]["id"], {"number_of_uses_left": voucher[0]["number_of_uses_left"] - 1, "already_used_by_user_emails": already_used_by_user_emails})
+
         await insert(connection, "registrations", registration_data)
 
         if is_student in ["yes", "Yes", "YES", True, "true", "True", "TRUE"]:
@@ -60,13 +111,20 @@ async def create_registration(db_pool, registration: RegistrationCreate, payment
                 "id": str(uuid4()),
                 "full_name": registration.full_name,
                 "email": registration.email,
-                "registration_id": str(registration_id),
+                "registration_id": reg_id,
                 "file_url": registration.file_url,
                 "file_type": registration.file_type,
                 "is_reviewed": False,
                 "is_approved": False
             }
             await insert(connection, "student_proofs", student_proof)
+        if is_free_ticket:
+            reg_ticket_id = reg_id.replace("-", "")[0:20]
+            await update(connection, "registrations", {"payment_status": "completed"}, filter={"id": reg_id, "email": registration.email})
+            send_email_for_pass(to=registration_data["email"], first_name=registration_data["full_name"].split()[0], full_name=registration_data["full_name"],
+                                ticket_id=reg_ticket_id, pass_type=registration_data["ticket_type"], number_of_slots=registration_data["ticket_quantity"])
+            return MessageResponse(message="Registration successful")
+
     await send_email_for_confirme_your_ticket_purchase(to=_to, action_url=_action_url, action_text=_action_text, first_name=_first_name, last_name=last_name)
     return MessageResponse(message="Registration successful")
 
@@ -116,7 +174,6 @@ async def approve_student_registration(db, registration_id: str):
     """
     try:
         registration = await select(db, "registrations", filter={"id": registration_id})
-        print(f"Registration data: {registration}")
         student_reg = await select_with_join(db, table="registrations", join_table="student_proofs", join_condition="registrations.id = student_proofs.registration_id", filter={"registrations.id": registration_id}, columns=[
             "registrations.full_name", "registrations.email", "registrations.payment_reference", "registrations.ticket_type", "registrations.ticket_quantity", "student_proofs.file_url", "student_proofs.file_type", "student_proofs.is_reviewed", "student_proofs.is_approved"])
         if not student_reg:

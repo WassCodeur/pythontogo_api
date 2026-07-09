@@ -95,6 +95,13 @@ def send_email_new(to, text_msg, html_msg, subject):
     msg['Subject'] = subject
     msg['From'] = f"PyCon Togo  2026 Team <{settings.smtp_user}>"
 
+    if not text_msg and not html_msg:
+        logger.error("Both text_msg and html_msg are empty. Email not sent.")
+        return
+    elif not text_msg:
+        text_msg = "This email requires an HTML-compatible email client to view."
+    elif not html_msg:
+        html_msg = "<html><body><p>This email requires an HTML-compatible email client to view.</p></body></html>"
     text_part = MIMEText(text_msg, 'plain')
     html_part = MIMEText(html_msg, 'html')
 
@@ -109,9 +116,9 @@ def send_email_new(to, text_msg, html_msg, subject):
 
 
 def send_email_for_pass(to, first_name, full_name, ticket_id, number_of_slots=1, pass_type=""):
-    if pass_type.lower() not in ["professional", "premium", "student", "diner"]:
-        logger.error(f"Invalid pass type: {pass_type}")
-        return
+
+    # TODO: Add validation for pass_type to ensure it is one of the expected values
+
     subject = f"Your PyCon Togo 2026 {pass_type.capitalize()} Pass - Download Now"
     try:
         template_url = ""
@@ -120,19 +127,19 @@ def send_email_for_pass(to, first_name, full_name, ticket_id, number_of_slots=1,
         name_color = (0, 0, 0, 225)
         color_id = (160, 160, 160, 255)  # Default to light gray
         pass_type = pass_type.lower()
-        if pass_type == "professional":
+        if pass_type in ["professional", "profesional", "pro", "standard", "Professionnel"]:
             template_url = settings.professional_pass_template_url
             name_color = (136, 144, 247, 255)  # bleu lavande
             color_id = (160, 160, 160, 255)  # gris clair
-        elif pass_type == "premium":
+        elif pass_type in ["premium", "premier", "premium_pass", "premier_pass", "full_access"]:
             template_url = settings.premium_pass_template_url
             name_color = (251, 152, 136, 255)  # rose saumon
             color_id = (160, 160, 160, 255)  # gris clair
-        elif pass_type == "student":
+        elif pass_type in ["student", "etudiant"]:
             template_url = settings.student_pass_template_url
             name_color = (180, 230,  80, 255)  # vert lime
             color_id = (160, 160, 160, 255)  # gris clair
-        elif pass_type == "dinner":
+        elif pass_type in ["diner", "dinner"]:
             template_url = settings.dinner_pass_template_url
             name_color = (251, 152, 136, 255)  # rose saumon
             color_id = (160, 160, 160, 255)  # gris clair
@@ -147,6 +154,9 @@ def send_email_for_pass(to, first_name, full_name, ticket_id, number_of_slots=1,
         send_email_new(to=to, text_msg="",
                        html_msg=email_content, subject=subject)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+
         logger.error(f"Failed to send {pass_type} pass email to {to}: {e}")
         return
 
