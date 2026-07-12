@@ -11,6 +11,13 @@ app_router = APIRouter(prefix="/helper", tags=["submissions"])
 base_url = settings.base_url.rstrip("/")
 base_url = f"{base_url}/{settings.root_path.strip('/')}" if settings.root_path else base_url
 
+timeout = httpx.Timeout(
+    connect=5.0,
+    read=120.0,
+    write=30.0,
+    pool=10.0
+)
+
 
 @app_router.post("/ticket/submit/{event_code}")
 async def submit_ticket(request: Request, payload: TicketSubmissionPayload, event_code: str, discount_code: str | None = None):
@@ -70,11 +77,13 @@ async def submit_ticket(request: Request, payload: TicketSubmissionPayload, even
                     status_code=500, detail="Failed to upload student proof")
 
         reg_url = f"{base_url}/register/{event_code}?is_student={is_student}"
+        # Debugging line to check the URL
         if discount_code:
             discount_code = discount_code.strip().replace(" ", "-").upper()
             reg_url += f"&discount_code={discount_code}"
 
-        async with httpx.AsyncClient() as client:
+        # TODO: TO BE REFACTORED - This is a temporary solution to submit the ticket to the registration endpoint. In the future, we should directly call the registration logic instead of making an HTTP request.
+        async with httpx.AsyncClient(timeout=timeout) as client:
 
             response = await client.post(reg_url, headers=header, json=registration_data)
             # Debugging line to check the response
@@ -87,6 +96,6 @@ async def submit_ticket(request: Request, payload: TicketSubmissionPayload, even
         # Log the error for debugging
         import traceback
         traceback.print_exc()
-        logger.error(f"Error processing ticket submission: {str(e)}")
+        logger.error(f"Error processing ticket submission")
         raise HTTPException(
-            status_code=500, detail=f"Error processing ticket submission: {str(e)}")
+            status_code=500, detail=f"Error processing ticket submission")

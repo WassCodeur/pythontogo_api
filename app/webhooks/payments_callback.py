@@ -31,6 +31,8 @@ async def payments_callback(request: Request, background_tasks: BackgroundTasks)
 
         phpformat_to_json(parsed, payload)
 
+        # Debugging line to check the payload
+
         hash = payload.get("data", {}).get("hash")
         payment_status = payload.get("data", {}).get("status", "")
         token = payload.get("data", {}).get("invoice", {}).get("token")
@@ -51,7 +53,7 @@ async def payments_callback(request: Request, background_tasks: BackgroundTasks)
             }
 
             background_tasks.add_task(
-                update_registration, request.app.state.db_pool, request.app.state.redis_client,  updated_data)
+                update_registration, request,  updated_data)
 
             return {"message": "callback received successfully"}
 

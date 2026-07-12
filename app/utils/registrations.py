@@ -1,12 +1,12 @@
-from app.database.orm import insert, select, update, select_with_join
+from app.database.orm import insert, select, update, select_with_join, select_with_multiple_joins
 from app.schemas.models import MessageResponse, RegistrationCreate, RegistrationUpdate, RegistrationSummary
 from uuid import uuid4, UUID
 from app.utils.date_format import format_date
 from app.utils.tickets import update_ticket, get_ticket_by_id
-from app.utils.send_email import send_email_for_confirme_your_ticket_purchase, send_email_for_pass, send_email_for_student_proof_of_enrollment
+from app.utils.send_email import send_email_for_confirme_your_ticket_purchase, send_email_for_pass, send_email_for_student_proof_of_enrollment, send_email_for_affiliation
 from json import dumps
 from fastapi import HTTPException
-from app.core.settings import logger
+from app.core.settings import logger, settings
 from app.utils.vauchers import update_voucher, calculate_discounted_price
 
 
@@ -47,8 +47,8 @@ async def create_registration(db_pool, registration: RegistrationCreate,  paymen
         if reg_existing[0]['payment_status'] == "completed":
             logger.info(
                 f"User {registration.email} has already completed registration for event {event_id}")
-            await send_email_for_pass(to=reg_existing[0]['email'], first_name=reg_existing[0]['full_name'].split()[0], full_name=reg_existing[0]['full_name'],
-                                      ticket_id=reg_existing[0]['ticket_id'], pass_type=reg_existing[0]['ticket_type'], number_of_slots=reg_existing[0]['ticket_quantity'])
+            send_email_for_pass(to=reg_existing[0]['email'], first_name=reg_existing[0]['full_name'].split()[0], full_name=reg_existing[0]['full_name'],
+                                ticket_id=reg_existing[0]['ticket_id'], pass_type=reg_existing[0]['ticket_type'], number_of_slots=reg_existing[0]['ticket_quantity'])
             return MessageResponse(message="You have already completed registration for this event.")
         elif reg_existing[0]['payment_status'] == "pending":
             logger.info(
@@ -129,16 +129,16 @@ async def create_registration(db_pool, registration: RegistrationCreate,  paymen
     return MessageResponse(message="Registration successful")
 
 
-async def update_registration(db_pool, redis_client, registration_update: RegistrationUpdate):
+async def update_registration(request, registration_update: RegistrationUpdate):
     """
     Update an existing registration.
     """
     payment_reference = registration_update.get("payment_reference", "")
     payment_id = payment_reference.replace("_", "")
 
-    async with db_pool.connection() as db:
+    async with request.app.state.db_pool.connection() as db:
 
-        existing_registration = await select_with_join(db, table="registrations", join_table="tickets", join_condition="registrations.ticket_id = tickets.id", filter={"registrations.payment_reference": payment_reference}, columns=["registrations.full_name", "registrations.id", "registrations.email", "registrations.whatsapp_number", "registrations.ticket_quantity", "registrations.payment_link", "registrations.ticket_id", "tickets.quantity", "tickets.name"])
+        existing_registration = await select_with_join(db, table="registrations", join_table="tickets", join_condition="registrations.ticket_id = tickets.id", filter={"registrations.payment_reference": payment_reference}, columns=["registrations.full_name", "registrations.id", "registrations.email", "registrations.whatsapp_number", "registrations.ticket_quantity", "registrations.payment_link", "registrations.ticket_id", "tickets.quantity", "tickets.name", "registrations.voucher_id", "registrations.voucher_code"])
 
         if not existing_registration:
             return MessageResponse(message="Registration not found")
@@ -151,9 +151,36 @@ async def update_registration(db_pool, redis_client, registration_update: Regist
         update_data = registration_update
         update_data['ticket_type'] = existing_registration[0]['name']
 
-        await redis_client.set(f"ticket_registration_token:{payment_reference}", payment_reference, ex=3600)
+        await request.app.state.redis_client.set(f"ticket_registration_token:{payment_reference}", payment_reference, ex=3600)
         await update(db, "registrations", filter={"payment_reference": payment_reference}, data=update_data)
         await update_ticket(db, existing_registration[0]['ticket_id'], {"quantity": ticket_available})
+
+        if existing_registration[0]['voucher_id']:
+            try:
+                existing_reg = await select_with_multiple_joins(db, table="registrations", joins=[
+                    {"join_table": "vouchers",
+                        "join_condition": "registrations.voucher_id = vouchers.id"},
+                    {"join_table": "events",
+                        "join_condition": "registrations.event_id = events.id"}
+                ], filter={"registrations.payment_reference": payment_reference}, columns=["events.title",   "registrations.ticket_type", "registrations.ticket_price", "registrations.voucher_code", "vouchers.discount_percentage", "vouchers.discount_amount", "vouchers.referer_info"])
+
+                if existing_reg:
+                    referer_info = existing_reg[0].get("referer_info", {})
+                    if referer_info and referer_info.get("referer_email", ""):
+                        current_time = request.app.state.current_time.strftime(
+                            "%Y-%m-%d %H:%M:%S")
+                        from app.utils.send_email import send_email_for_affiliation
+                        from app.utils.referal import calculate_commission_amount
+
+                        commission_amount = calculate_commission_amount(
+                            existing_reg[0]['ticket_price'], referer_info.get("referer_commission_percentage", 0))
+                        send_email_for_affiliation(to=referer_info.get("referer_email", ""), affiliate_name=referer_info.get("referer_full_name", ""), ticket_name=existing_reg[0][
+                            'ticket_type'], commission_amount=commission_amount, purchase_date=current_time, referral_id=existing_reg[0]['voucher_code'], event_name=existing_reg[0]['title'])
+            except Exception as e:
+                logger.error(
+                    f"Error sending affiliation email: {str(e)}")
+                # Optionally, you can raise an HTTPException here if you want to notify the user about the failure
+                # raise HTTPException(status_code=500, detail="Failed to send affiliation email")
 
         if student_proof:
             submission_date = format_date(student_proof[0]['created_at'])
@@ -165,6 +192,7 @@ async def update_registration(db_pool, redis_client, registration_update: Regist
 
         send_email_for_pass(to=existing_registration[0]['email'], first_name=existing_registration[0]['full_name'].split()[0], full_name=existing_registration[0]['full_name'],
                             ticket_id=payment_id, pass_type=existing_registration[0]['name'], number_of_slots=existing_registration[0]['ticket_quantity'])
+
     return MessageResponse(message="Registration updated successfully")
 
 
@@ -194,5 +222,49 @@ async def approve_student_registration(db, registration_id: str):
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(
-        approve_student_registration(db=None, registration_id="ccffa861-2993-4de8-8e0c-b6fdc660a989"))
+    from psycopg import AsyncConnection
+
+    payment_reference = "test_q1fbjbe7o8"
+
+    async def main():
+        db = await AsyncConnection.connect(settings.db_url)
+
+        registration = await select_with_multiple_joins(
+            db,
+            table="registrations",
+            joins=[
+                {"join_table": "vouchers",
+                 "join_condition": "registrations.voucher_id = vouchers.id"},
+                {"join_table": "events",
+                 "join_condition": "registrations.event_id = events.id"}
+            ],
+            filter={
+                "registrations.payment_reference": payment_reference
+            },
+            columns=[
+                "events.title",
+                "registrations.ticket_type",
+                "registrations.ticket_price",
+                "vouchers.code",
+                "vouchers.discount_percentage",
+                "vouchers.discount_amount",
+                "vouchers.referer_info"
+            ]
+        )
+
+        reg = await select_with_join(
+            db,
+            table="registrations",
+            join_table="vouchers",
+            join_condition="registrations.voucher_id = vouchers.id",
+            filter={
+                "registrations.payment_reference": payment_reference
+            }
+        )
+
+        print(f"Registration with voucher: {registration}")
+        # print(f"Registration: {reg}")
+
+        await db.close()
+
+    asyncio.run(main())

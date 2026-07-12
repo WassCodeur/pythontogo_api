@@ -390,6 +390,7 @@ CREATE_TABLE_QUERIES = [
         applicable_user_emails JSONB,
         applicable_user_ids JSONB,
         already_used_by_user_emails JSONB,
+        referer_info JSONB,
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         valid_from TIMESTAMPTZ,
         valid_until TIMESTAMPTZ,

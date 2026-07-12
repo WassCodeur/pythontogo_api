@@ -128,6 +128,10 @@ async def validate_voucher(request, voucher_code, ticket_id: str, event_id, user
 
             if voucher.get("valid_from") and voucher.get("valid_until"):
                 if not (voucher["valid_from"] <= current_time <= voucher["valid_until"]):
+                    logger.info(
+                        f"Voucher {voucher_code} is not valid at the current time.")
+                    logger.info(
+                        f"Current time: {current_time}, Valid from: {voucher['valid_from']}, Valid until: {voucher['valid_until']}")
                     return None
             if not voucher.get("is_active", False):
                 return None
@@ -137,16 +141,22 @@ async def validate_voucher(request, voucher_code, ticket_id: str, event_id, user
 
             # Check if the voucher is applicable to the event
             if voucher.get("applicable_event_ids") and event_id not in voucher["applicable_event_ids"]:
-
+                logger.info(
+                    f"Voucher {voucher_code} is not applicable to event {event_id}")
                 return None
 
             # Check if the voucher is applicable to the user email
             if voucher.get("applicable_user_emails") and user_email not in voucher["applicable_user_emails"]:
+                logger.info(
+                    f"Voucher {voucher_code} is not applicable to user email {user_email}")
                 return None
             if voucher.get("already_used_by_user_emails") and user_email in voucher["already_used_by_user_emails"]:
+                logger.info(
+                    f"Voucher {voucher_code} has already been used by user email {user_email}")
                 return None
             # Check if the voucher has remaining uses
             if voucher.get("number_of_uses_left", 0) <= 0:
+                logger.info(f"Voucher {voucher_code} has no remaining uses.")
                 return None
 
             return voucher

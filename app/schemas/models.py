@@ -702,6 +702,17 @@ class AttendeeID(BaseModel):
     attendee_id: UUID
 
 
+class ReferralBase(BaseModel):
+    referer_email: str | None = Field(
+        default=None, description="Referer email must be a valid email address")
+    referer_commission_percentage: float | None = Field(
+        default=None, ge=0, le=100, description="Referer commission percentage must be between 0 and 100")
+    referer_commission_amount: float | None = Field(
+        default=None, ge=0, description="Referer commission amount must be non-negative")
+    referer_full_name: str | None = Field(
+        default=None, description="Referer full name must be a valid string")
+
+
 class VoucherBase(BaseModel):
     prefix: str
     description: str | None = None
@@ -717,6 +728,7 @@ class VoucherBase(BaseModel):
     applicable_event_ids: List[str] | None = None
     applicable_user_emails: List[str] | None = None
     applicable_user_ids: List[str] | None = None
+    referer_info: ReferralBase | None = None
     is_active: bool = True
     valid_from: datetime | None = None
     valid_until: datetime | None = None

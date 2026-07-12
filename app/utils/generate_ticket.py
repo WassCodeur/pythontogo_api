@@ -54,7 +54,6 @@ def make_qr_image(data: str, size: int, pass_type: str = "") -> Image.Image:
 
 def load_template(template_url: str) -> Image.Image:
 
-    print(f"[INFO] Template local introuvable → téléchargement depuis ImageKit…")
     r = requests.get(template_url, timeout=15)
     r.raise_for_status()
     return Image.open(io.BytesIO(r.content)).convert("RGBA")
@@ -63,6 +62,7 @@ def load_template(template_url: str) -> Image.Image:
 def generate_ticket(name: str, ticket_id: str, qr_data: str, template_url: str, name_color: tuple = COL_NAME, color_id: tuple = COL_ID, pass_type="") -> tuple[str, str]:
 
     name_safe = name.replace(" ", "_").lower()
+    ticket_id = str(ticket_id).replace(" ", "_").lower()
     filename = f"ticket_{name_safe}_{ticket_id.lstrip('#')}.png"
 
     img = load_template(template_url)   # 595 × 238 px

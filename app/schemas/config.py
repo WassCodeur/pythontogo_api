@@ -25,6 +25,10 @@ class Config(BaseModel):
     smtp_port: int = 587
     smtp_user: str = "user"
     smtp_password: str = "password"
+    admin_smtp_server: str | None = None
+    admin_smtp_port: int | None = None
+    admin_smtp_user: str | None = None
+    admin_smtp_password: str | None = None
     paydunya_public_key: str | None = None
     paydunya_private_key: str | None = None
     paydunya_token: str | None = None

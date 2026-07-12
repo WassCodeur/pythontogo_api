@@ -576,7 +576,7 @@ template = """<!DOCTYPE html>
 def render_professional_pass_email(first_name, full_name, ticket_id, ticket_url, qr_url):
     rendered_email = template.replace("{{firstName}}", first_name)
     rendered_email = rendered_email.replace("{{FULL_NAME}}", full_name)
-    rendered_email = rendered_email.replace("{{TICKET_ID}}", ticket_id)
+    rendered_email = rendered_email.replace("{{TICKET_ID}}", str(ticket_id))
     rendered_email = rendered_email.replace("{{TICKET_URL}}", ticket_url)
     rendered_email = rendered_email.replace("{{QR_URL}}", qr_url)
 
