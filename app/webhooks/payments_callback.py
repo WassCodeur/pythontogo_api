@@ -33,9 +33,13 @@ async def payments_callback(request: Request, background_tasks: BackgroundTasks)
 
         # Debugging line to check the payload
 
+        print("Received payload:", payload)
+
         hash = payload.get("data", {}).get("hash")
         payment_status = payload.get("data", {}).get("status", "")
         token = payload.get("data", {}).get("invoice", {}).get("token")
+        description = payload.get("data", {}).get(
+            "invoice", {}).get("items", {}).get("item_0", {}).get("description", "")
 
         if not hash or not verify_paydunya_hash(hash):
             raise HTTPException(
@@ -49,7 +53,8 @@ async def payments_callback(request: Request, background_tasks: BackgroundTasks)
             updated_data = {
                 "payment_status": "completed",
                 "payment_reference": token,
-                "payment_link": payload.get("data", {}).get("receipt_url", "")
+                "payment_link": payload.get("data", {}).get("receipt_url", ""),
+                "description": description
             }
 
             background_tasks.add_task(

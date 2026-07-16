@@ -547,6 +547,7 @@ class RegistrationUpdate(BaseModel):
     agreed_to_code_of_conduct: bool | None = None
     agreed_to_privacy_policy: bool | None = None
     shared_with_sponsors: bool | None = None
+    description: str | None = None
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc))
 

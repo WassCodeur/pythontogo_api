@@ -1,38 +1,16 @@
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.schemas.models import TicketSubmissionPayload
+from app.schemas.models import TicketSubmissionPayload, RegistrationCreate
 from app.core.settings import settings, logger
 from app.core.imagekit import upload_image_base64_url
 
-app_router = APIRouter(prefix="/helper", tags=["submissions"])
 
-
-base_url = settings.base_url.rstrip("/")
-base_url = f"{base_url}/{settings.root_path.strip('/')}" if settings.root_path else base_url
-
-timeout = httpx.Timeout(
-    connect=5.0,
-    read=120.0,
-    write=30.0,
-    pool=10.0
-)
-
-
-@app_router.post("/ticket/submit/{event_code}")
-async def submit_ticket(request: Request, payload: TicketSubmissionPayload, event_code: str, discount_code: str | None = None):
+def submit_ticket(payload: TicketSubmissionPayload) -> tuple[RegistrationCreate, bool]:
     try:
         # TODO - Coupon code validation can be added here if needed
         # TODO: Add validation for the payload if needed
 
-        auth = request.headers.get("Authorization")
-        header = {
-            "Authorization": auth
-        }
-        if not auth or not auth.startswith("Bearer "):
-            raise HTTPException(
-                status_code=401, detail="Unauthorized")
-        # Here you can add additional validation for the payload if needed
         registration_data = {
             "full_name": payload.buyer.fullName,
             "email": payload.buyer.email,
@@ -76,22 +54,7 @@ async def submit_ticket(request: Request, payload: TicketSubmissionPayload, even
                 raise HTTPException(
                     status_code=500, detail="Failed to upload student proof")
 
-        reg_url = f"{base_url}/register/{event_code}?is_student={is_student}"
-        # Debugging line to check the URL
-        if discount_code:
-            discount_code = discount_code.strip().replace(" ", "-").upper()
-            reg_url += f"&discount_code={discount_code}"
-
-        # TODO: TO BE REFACTORED - This is a temporary solution to submit the ticket to the registration endpoint. In the future, we should directly call the registration logic instead of making an HTTP request.
-        async with httpx.AsyncClient(timeout=timeout) as client:
-
-            response = await client.post(reg_url, headers=header, json=registration_data)
-            # Debugging line to check the response
-            response_data = response.json()
-            if response.status_code != 201:
-                raise HTTPException(
-                    status_code=response.status_code, detail="Failed to submit ticket")
-        return response_data
+        return registration_data, is_student
     except Exception as e:
         # Log the error for debugging
         import traceback

@@ -1,6 +1,7 @@
 import paydunya
 from paydunya import InvoiceItem, Store, Invoice
 from app.core.settings import settings, infos
+from app.schemas.payment import Payment
 
 
 paydunya.debug = settings.debug
@@ -18,36 +19,37 @@ root_path = settings.root_path.rstrip("/").lstrip("/")
 base_url = f"{base_url}/{root_path}" if root_path else base_url
 
 
-def create_invoice(description, unit_price, callback_url=None,   qte=1, name=None, success_page_url=None, cancel_page_url=None):
-    if unit_price < 200:
+def create_invoice(payment: Payment):
+    payment = Payment(**payment)
+    if payment.unit_price < 200:
         raise ValueError("Unit price must be greater or equal to 200")
-    if qte < 1:
+    if payment.quantity < 1:
         raise ValueError("Quantity must be greater or equal to 1")
-    total_price = unit_price * qte
+    total_price = payment.unit_price * payment.quantity
     invoice = Invoice(
         store=store
     )
 
     items = [
         InvoiceItem(
-            name=name,
-            quantity=qte,
-            unit_price=unit_price,
+            name=payment.name,
+            quantity=payment.quantity,
+            unit_price=payment.unit_price,
             total_price=total_price,
-            description=description
+            description=payment.description
         )
     ]
 
     invoice.add_items(items)
     invoice.calculate_total_amt()
-    invoice.cancel_url = cancel_page_url or f"{base_url}/checkout/payment/cancel"
-    invoice.return_url = success_page_url or f"{base_url}/checkout/payment/success"
-    if callback_url and callback_url.startswith("https://"):
-        invoice.callback_url = callback_url
+    invoice.cancel_url = payment.cancel_page_url or f"{base_url}/checkout/payment/cancel"
+    invoice.return_url = payment.success_page_url or f"{base_url}/checkout/payment/success"
+    if payment.callback_url and payment.callback_url.startswith("https://"):
+        invoice.callback_url = payment.callback_url
 
     successful, response = invoice.create()
     if successful:
-        return response.get("response_text")
+        return {"payment_url": response.get("response_text")}
     else:
         raise Exception("Failed to create invoice")
 
