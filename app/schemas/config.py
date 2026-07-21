@@ -33,6 +33,10 @@ class Config(BaseModel):
     paydunya_private_key: str | None = None
     paydunya_token: str | None = None
     paydunya_master_key: str | None = None
+    webhook_secret_key: str | None = None
+    webhook_url: str | None = None
+    success_page_url: str | None = None
+    cancel_page_url: str | None = None
     imagekit_public_key: str | None = None
     imagekit_private_key: str | None = None
     imagekit_url_endpoint: str | None = None
@@ -40,3 +44,7 @@ class Config(BaseModel):
     professional_pass_template_url: str | None = None
     premium_pass_template_url: str | None = None
     dinner_pass_template_url: str | None = None
+    volunteering_team_email: str | None = None
+    ticketing_team_email: str | None = None
+    sponsorship_team_email: str | None = None
+    contact_team_email: str | None = None

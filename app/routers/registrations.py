@@ -92,19 +92,17 @@ async def register_for_event(request: Request,  payload: TicketSubmissionPayload
         if amount < 200 and is_voucher_valid:
             await request.app.state.redis_client.set(f"ticket_registration_token:{reference}", reference, ex=3600)
             registration.payment_reference = reference
-            registration.payment_link = f"https://pycon.pytogo.org/tickets/success?token={reference}"
+            registration.payment_link = f"{settings.success_page_url}?token={reference}"
             background_tasks.add_task(create_registration, request.app.state.db_pool, registration,
                                       event_existing[0]["event_id"], is_student, is_free_ticket=True, discount_code=discount_code, description=description)
-            return {"message": "Registration successful. You have registered for a free ticket.", "is_free_ticket": True, "payment_url": f"https://pycon.pytogo.org/tickets/success?token={reference}"}
+            return {"message": "Registration successful. You have registered for a free ticket.", "is_free_ticket": True, "payment_url": registration.payment_link}
 
-        success_page_url = registration.success_page_url if registration.success_page_url and registration.success_page_url.startswith(
-            "http") else f"{base_url}/checkout/payment-success"
-        cancel_page_url = registration.cancel_page_url if registration.cancel_page_url and registration.cancel_page_url.startswith(
-            "http") else f"{base_url}/checkout/payment-cancel"
+        success_page_url = settings.success_page_url
+        cancel_page_url = settings.cancel_page_url
 
         payment_data = {
             "amount": int(amount),
-            "callback_url": f"{base_url}/webhooks/paydunya/callback",
+            "callback_url": settings.webhook_url,
             "description": description,
             "unit_price": int(registration.ticket_price),
             "quantity": int(registration.quantity),

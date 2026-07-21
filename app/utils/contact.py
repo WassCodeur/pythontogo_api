@@ -2,11 +2,54 @@ from fastapi import HTTPException, BackgroundTasks
 from app.core.settings import logger
 
 from app.database.orm import select, insert, update, delete
+from app.utils.send_email import send_email_to_voluteering_team, send_email_to_sponsorship_team, send_email_to_team
+from datetime import datetime, timezone
 
 
-async def add_contact(db, payload: dict, background_tasks: BackgroundTasks):
+async def send_contact_email_the_appropriate_team(db_pool, contact_data: dict):
+    """
+    Send contact email to the appropriate team based on the contact data.
+    """
+    date = datetime.now(timezone.utc)
     try:
-        background_tasks.add_task(insert, db, "contact_messages", payload)
+        async with db_pool.connection() as db:
+            await insert(db, "contact_messages", contact_data)
+            if contact_data.get("subject").lower() in ["volunteering", "volunteer"]:
+                send_email_to_voluteering_team(
+                    name=contact_data.get("name"),
+                    email=contact_data.get("email"),
+                    message=contact_data.get("message"),
+                    date=date,
+                    phone=contact_data.get("phone")
+                )
+            elif contact_data.get("subject").lower() in ["sponsorship", "sponsor"]:
+                send_email_to_sponsorship_team(
+                    name=contact_data.get("name"),
+                    email=contact_data.get("email"),
+                    date=date,
+                    message=contact_data.get("message"),
+                    phone=contact_data.get("phone")
+                )
+            else:
+                send_email_to_team(
+                    name=contact_data.get("name"),
+                    email=contact_data.get("email"),
+                    date=date,
+                    message=contact_data.get("message"),
+                    phone=contact_data.get("phone")
+                )
+
+        return {"message": "Contact message received successfully"}
+
+    except Exception as e:
+        logger.error(f"Error sending contact email: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Error sending contact email")
+
+
+async def add_contact(db, payload: dict):
+    try:
+        await insert(db, "contact_messages", payload)
         return {"message": "Contact message received successfully"}
     except Exception as e:
         logger.error(f"Error adding contact message: {str(e)}")

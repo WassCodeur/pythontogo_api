@@ -4,7 +4,7 @@ import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from app.core.settings import settings, logger
-from app.utils.generate_email_htmal_format import generate_affiliation_email_content, generate_email_content
+from app.utils.generate_email_htmal_format import generate_affiliation_email_content, generate_email_content, generate_team_email_content,  generate_ticket_team_email_content
 from fastapi import HTTPException, status
 from app.utils.generate_ticket import generate_ticket
 from app.utils.render_pass_email import render_pass_email
@@ -209,6 +209,87 @@ def send_email_for_affiliation(to, affiliate_name, ticket_name, commission_amoun
                                          html_msg=email_html_content, subject=subject)
     except Exception as e:
         logger.error(f"Failed to send affiliation email to {to}: {e}")
+        return
+
+
+def send_email_to_voluteering_team(name, email, message, date, phone=None):
+    try:
+        app_name = settings.business_name
+        notification_type = "Volunteering Team Notification"
+        title = "Someone wants to join the volunteering team"
+        team_name = "Volunteering"
+        subject = f"{name} has sent a message to the {team_name} - {app_name}"
+        to = settings.volunteering_team_email
+        date = date.strftime(
+            "%Y-%m-%d %H:%M:%S") if hasattr(date, 'strftime') else str(date)
+        email_html_content, email_plain_text_content = generate_team_email_content(
+            app_name, team_name, notification_type, title, name, email, subject, date, message, phone)
+        _send_mail_with_secondary_adress(to=to, text_msg=email_plain_text_content,
+                                         html_msg=email_html_content, subject=subject)
+    except Exception as e:
+        logger.error(f"Failed to send team notification email to {to}: {e}")
+        return
+
+
+def send_email_to_ticketing_team(name, email, ticket_type, amount, payment_status, date, payment_url, voucher_code="N/A", phone="N/A"):
+    try:
+        app_name = settings.business_name
+        title = f"{name} has paid for a ticket" if payment_status.lower(
+        ) == "completed" else "Someone has initiated a ticket purchase"
+        subject = f"{title} - {app_name}"
+        to = settings.ticketing_team_email
+        date = date.strftime(
+            "%Y-%m-%d %H:%M:%S") if hasattr(date, 'strftime') else str(date)
+        email_html_content, email_plain_text_content = generate_ticket_team_email_content(
+            app_name, name, email, ticket_type, amount, payment_status, date, payment_url, voucher_code, phone)
+
+        _send_mail_with_secondary_adress(to=to, text_msg=email_plain_text_content,
+                                         html_msg=email_html_content, subject=subject)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        logger.error(
+            f"Failed to send ticketing team notification email to {to}: {e}")
+        return
+
+
+def send_email_to_sponsorship_team(name, email, date, message, phone=None):
+    try:
+        to = settings.sponsorship_team_email
+        app_name = settings.business_name
+        team_name = "Sponsorship"
+        notification_type = "Sponsorship Team Notification"
+        title = "Someone wants to contact the sponsorship team"
+        subject = f"{name} has sent a message to the {team_name} - {app_name}"
+        date = date.strftime(
+            "%Y-%m-%d %H:%M:%S") if hasattr(date, 'strftime') else str(date)
+
+        email_html_content, email_plain_text_content = generate_team_email_content(
+            app_name, team_name, notification_type, title, name, email, subject, date, message, phone)
+        _send_mail_with_secondary_adress(to=to, text_msg=email_plain_text_content,
+                                         html_msg=email_html_content, subject=subject)
+    except Exception as e:
+        logger.error(
+            f"Failed to send sponsorship team notification email to {to}: {e}")
+        return
+
+
+def send_email_to_team(name, email, date, message, phone=None):
+    try:
+        to = settings.contact_team_email
+        app_name = settings.business_name
+        team_name = "Contact"
+        notification_type = "Contact Team Notification"
+        title = "Someone wants to contact the team"
+        subject = f"{name} has sent a message to the {team_name} - {app_name}"
+        date = date.strftime(
+            "%Y-%m-%d %H:%M:%S") if hasattr(date, 'strftime') else str(date)
+        email_html_content, email_plain_text_content = generate_team_email_content(
+            app_name, team_name, notification_type, title, name, email, subject, date, message, phone)
+        _send_mail_with_secondary_adress(to=to, text_msg=email_plain_text_content,
+                                         html_msg=email_html_content, subject=subject)
+    except Exception as e:
+        logger.error(f"Failed to send team notification email to {to}: {e}")
         return
 
 

@@ -40,6 +40,10 @@ settings = Config(
     paydunya_private_key=config("PAYDUNYA_PRIVATE_KEY", default=None),
     paydunya_token=config("PAYDUNYA_TOKEN", default=None),
     paydunya_master_key=config("PAYDUNYA_MASTER_KEY", default=None),
+    webhook_secret_key=config("WEBHOOK_SECRET_KEY", default=None),
+    webhook_url=config("WEBHOOK_URL", default=None),
+    success_page_url=config("SUCCESS_PAGE_URL", default=None),
+    cancel_page_url=config("CANCEL_PAGE_URL", default=None),
     imagekit_private_key=config("IMAGEKIT_PRIVATE_KEY", default=None),
     imagekit_public_key=config("IMAGEKIT_PUBLIC_KEY", default=None),
     imagekit_url_endpoint=config("IMAGEKIT_URL_ENDPOINT", default=None),
@@ -49,7 +53,11 @@ settings = Config(
         "PROFESSIONAL_PASS_TEMPLATE_URL", default=None),
     premium_pass_template_url=config(
         "PREMIUM_PASS_TEMPLATE_URL", default=None),
-    dinner_pass_template_url=config("DINNER_PASS_TEMPLATE_URL", default=None)
+    dinner_pass_template_url=config("DINNER_PASS_TEMPLATE_URL", default=None),
+    volunteering_team_email=config("VOLUNTEERING_TEAM_EMAIL", default=None),
+    ticketing_team_email=config("TICKETING_TEAM_EMAIL", default=None),
+    sponsorship_team_email=config("SPONSORSHIP_TEAM_EMAIL", default=None),
+    contact_team_email=config("CONTACT_TEAM_EMAIL", default=None)
 )
 
 

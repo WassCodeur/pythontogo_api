@@ -3,11 +3,12 @@ from app.schemas.models import MessageResponse, RegistrationCreate, Registration
 from uuid import uuid4, UUID
 from app.utils.date_format import format_date
 from app.utils.tickets import update_ticket, get_ticket_by_id
-from app.utils.send_email import send_email_for_confirme_your_ticket_purchase, send_email_for_pass, send_email_for_student_proof_of_enrollment, send_email_for_affiliation
+from app.utils.send_email import send_email_for_confirme_your_ticket_purchase, send_email_for_pass, send_email_for_student_proof_of_enrollment,  send_email_to_ticketing_team
 from json import dumps
 from fastapi import HTTPException
 from app.core.settings import logger, settings
 from app.utils.vauchers import update_voucher, calculate_discounted_price
+from datetime import datetime, timezone
 
 
 def validate_registration_data(registration: RegistrationCreate, reg_existing, ticket):
@@ -42,7 +43,7 @@ async def create_registration(db_pool, registration: RegistrationCreate, event_i
     _action_text = "Confirm Your Ticket Purchase"
     _first_name = registration.full_name.split()[0]
     last_name = registration.full_name.split()[-1]
-
+    current_time = datetime.now(timezone.utc)
     reg_id = str(uuid4())
 
     registration_data = {
@@ -68,7 +69,7 @@ async def create_registration(db_pool, registration: RegistrationCreate, event_i
 
     async with db_pool.connection() as connection:
 
-        reg_existing = await select_with_join(connection, table="registrations", join_table="tickets", join_condition="registrations.ticket_id = tickets.id", filter={"registrations.email": registration.email, "registrations.event_id": event_id}, columns=["registrations.payment_status", "registrations.id", "registrations.full_name", "registrations.email", "registrations.ticket_quantity", "registrations.payment_link", "registrations.ticket_id", "tickets.quantity", "tickets.name"])
+        reg_existing = await select_with_join(connection, table="registrations", join_table="tickets", join_condition="registrations.ticket_id = tickets.id", filter={"registrations.email": registration.email, "registrations.event_id": event_id}, columns=["registrations.payment_status", "registrations.id", "registrations.full_name", "registrations.email", "registrations.ticket_quantity", "registrations.payment_link", "registrations.ticket_type", "registrations.ticket_price", "registrations.whatsapp_number", "registrations.ticket_id", "tickets.quantity", "tickets.name"])
 
         if is_free_ticket:
             registration_data["payment_status"] = "completed"
@@ -87,6 +88,8 @@ async def create_registration(db_pool, registration: RegistrationCreate, event_i
 
             send_email_for_pass(to=registration_data["email"].strip(), first_name=registration_data["full_name"].split()[0], full_name=registration_data["full_name"],
                                 ticket_id=payment_reference, pass_type=registration_data["ticket_type"], number_of_slots=registration_data["ticket_quantity"])
+            send_email_to_ticketing_team(name=registration_data["full_name"], email=registration_data["email"], ticket_type=registration_data["ticket_type"],
+                                         amount=registration_data["ticket_price"], payment_status=registration_data["payment_status"], date=current_time, payment_url=registration_data["payment_link"], voucher_code=discount_code, phone=registration_data.get("whatsapp_number", "N/A"))
 
         if reg_existing:
 
@@ -103,6 +106,7 @@ async def create_registration(db_pool, registration: RegistrationCreate, event_i
                 }
 
                 await insert(connection, "student_proofs", student_proof)
+                # TODO: check if the student proof is already submitted and send email accordingly
 
             if reg_existing[0]['payment_status'] == "completed":
                 logger.info(
@@ -119,6 +123,8 @@ async def create_registration(db_pool, registration: RegistrationCreate, event_i
                 if not is_free_ticket:
                     await send_email_for_confirme_your_ticket_purchase(to=reg_existing[0]['email'].strip(), action_url=payment_link, action_text=_action_text, first_name=reg_existing[0]['full_name'].split()[
                         0], last_name=reg_existing[0]['full_name'].split()[-1])
+                    send_email_to_ticketing_team(name=reg_existing[0]['full_name'], email=reg_existing[0]['email'], ticket_type=reg_existing[0]['ticket_type'],
+                                                 amount=reg_existing[0]['ticket_price'], payment_status=reg_existing[0]['payment_status'], date=current_time, payment_url=reg_existing[0]['payment_link'], voucher_code=discount_code, phone=registration_data.get("whatsapp_number", "N/A"))
                     return MessageResponse(message="Please check your email to confirm your ticket purchase.")
                 return MessageResponse(message="Registration successful")
 
@@ -144,7 +150,14 @@ async def create_registration(db_pool, registration: RegistrationCreate, event_i
             }
             await insert(connection, "student_proofs", student_proof)
         if is_free_ticket:
+            send_email_for_pass(to=registration_data["email"].strip(), first_name=registration_data["full_name"].split()[0], full_name=registration_data["full_name"],
+                                ticket_id=payment_reference, pass_type=registration_data["ticket_type"], number_of_slots=registration_data["ticket_quantity"])
+            send_email_to_ticketing_team(name=registration_data["full_name"], email=registration_data["email"], ticket_type=registration_data["ticket_type"],
+                                         amount=registration_data["ticket_price"], payment_status=registration_data["payment_status"], date=current_time, payment_url=registration_data["payment_link"], voucher_code=discount_code, phone=registration_data.get("whatsapp_number", "N/A"))
+        else:
             await send_email_for_confirme_your_ticket_purchase(to=_to.strip(), action_url=_action_url, action_text=_action_text, first_name=_first_name, last_name=last_name)
+            send_email_to_ticketing_team(name=registration_data["full_name"], email=registration_data["email"], ticket_type=registration_data["ticket_type"],
+                                         amount=registration_data["ticket_price"], payment_status=registration_data["payment_status"], date=current_time, payment_url=registration_data["payment_link"], voucher_code=discount_code, phone=registration_data.get("whatsapp_number", "N/A"))
     return MessageResponse(message="Registration successful")
 
 
@@ -155,10 +168,11 @@ async def update_registration(request, registration_update: RegistrationUpdate):
     payment_reference = registration_update.get("payment_reference", "")
     description = registration_update.get("description", "")
     payment_id = payment_reference.replace("_", "")
+    current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     async with request.app.state.db_pool.connection() as db:
 
-        existing_registration = await select_with_join(db, table="registrations", join_table="tickets", join_condition="registrations.ticket_id = tickets.id", filter={"registrations.payment_reference": payment_reference}, columns=["registrations.full_name", "registrations.ticket_type", "registrations.id", "registrations.email", "registrations.whatsapp_number", "registrations.ticket_quantity", "registrations.payment_link", "registrations.ticket_id", "tickets.quantity", "tickets.name", "registrations.voucher_id", "registrations.voucher_code"])
+        existing_registration = await select_with_join(db, table="registrations", join_table="tickets", join_condition="registrations.ticket_id = tickets.id", filter={"registrations.payment_reference": payment_reference}, columns=["registrations.full_name", "registrations.ticket_type", "registrations.id", "registrations.email", "registrations.whatsapp_number", "registrations.ticket_quantity", "registrations.ticket_price",  "registrations.payment_link", "registrations.ticket_id", "tickets.quantity", "tickets.name", "registrations.voucher_id", "registrations.voucher_code"])
 
         if not existing_registration:
             return MessageResponse(message="Registration not found")
@@ -225,6 +239,8 @@ async def update_registration(request, registration_update: RegistrationUpdate):
 
         send_email_for_pass(to=existing_registration[0]['email'], first_name=existing_registration[0]['full_name'].split()[0], full_name=existing_registration[0]['full_name'],
                             ticket_id=payment_id, pass_type=existing_registration[0]['name'], number_of_slots=existing_registration[0]['ticket_quantity'])
+        send_email_to_ticketing_team(name=existing_registration[0]['full_name'], email=existing_registration[0]['email'], ticket_type=existing_registration[0]['name'],
+                                     amount=existing_registration[0]['ticket_price'], payment_status="completed", date=current_time, payment_url=existing_registration[0]['payment_link'], voucher_code=existing_registration[0]['voucher_code'], phone=existing_registration[0].get("whatsapp_number", "N/A"))
 
     return MessageResponse(message="Registration updated successfully")
 

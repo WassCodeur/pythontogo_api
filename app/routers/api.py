@@ -13,6 +13,7 @@ from app.routers.tickets import api_router as tickets_router
 from app.routers.registrations import api_router as registrations_router
 from app.routers.job_offers import api_router as job_offers_router
 from app.routers.vauchers import api_router as vauchers_router
+from app.routers.teams import api_router as teams_router
 from fastapi import APIRouter
 from app.core.security import verify_api_key
 
@@ -34,3 +35,4 @@ api_routers.include_router(registrations_router)
 api_routers.include_router(tickets_router)
 api_routers.include_router(job_offers_router)
 api_routers.include_router(vauchers_router)
+api_routers.include_router(teams_router)

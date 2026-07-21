@@ -421,6 +421,7 @@ CREATE_TABLE_QUERIES = [
         shared_with_sponsors BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        description TEXT,
         CONSTRAINT fk_registrations_event
             FOREIGN KEY (event_id)
             REFERENCES events(id)
@@ -433,8 +434,8 @@ CREATE_TABLE_QUERIES = [
             FOREIGN KEY (ticket_id)
             REFERENCES tickets(id)
             ON DELETE SET NULL
-        
-        
+
+
     );""",
     """CREATE TABLE IF NOT EXISTS student_proofs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -472,16 +473,37 @@ CREATE_TABLE_QUERIES = [
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );""",
 
+    """
+    CREATE TABLE IF NOT EXISTS team_members (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        role VARCHAR(255) NOT NULL,
+        bio TEXT,
+        photo_url TEXT,
+        social_links JSONB,
+        is_volunteer BOOLEAN NOT NULL DEFAULT FALSE,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        position INTEGER,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        event_id UUID NOT NULL,
+        CONSTRAINT fk_team_members_event
+            FOREIGN KEY (event_id)
+            REFERENCES events(id)
+            ON DELETE CASCADE
+    );""",
 
 ]
-
 
 CREATE_INDEX_QUERIES = [
     "CREATE INDEX IF NOT EXISTS idx_sponsors_partners_event_id ON sponsors_partners(event_id);",
     "CREATE INDEX IF NOT EXISTS idx_api_keys_event_id ON api_keys(event_id);",
     "CREATE INDEX IF NOT EXISTS idx_job_offers_is_active ON job_offers(is_active);",
     "CREATE INDEX IF NOT EXISTS idx_job_offers_company ON job_offers(company);",
-
+    "CREATE INDEX IF NOT EXISTS idx_team_members_event_id ON team_members(event_id);",
+    "CREATE INDEX IF NOT EXISTS idx_team_members_is_active ON team_members(is_active);",
+    "CREATE INDEX IF NOT EXISTS idx_team_members_position ON team_members(position);",
 ]
 
 
