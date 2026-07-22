@@ -31,10 +31,6 @@ async def payments_callback(request: Request, background_tasks: BackgroundTasks)
 
         phpformat_to_json(parsed, payload)
 
-        # Debugging line to check the payload
-
-        print("Received payload:", payload)
-
         hash = payload.get("data", {}).get("hash")
         payment_status = payload.get("data", {}).get("status", "")
         token = payload.get("data", {}).get("invoice", {}).get("token")
