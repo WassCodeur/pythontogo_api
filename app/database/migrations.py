@@ -18,7 +18,7 @@ CREATE_TYPES_QUERY = """
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_type_enum') THEN
-        CREATE TYPE partner_type_enum AS ENUM ('partnership', 'sponsorship', 'media_partner', 'python_community_partner', 'community_partner', 'other');
+        CREATE TYPE partner_type_enum AS ENUM ('partnership', 'sponsorship', 'media_partner', 'python_community_partner', 'community_partner', 'institutional_support', 'venue_support', 'other');
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'delivery_method_enum') THEN

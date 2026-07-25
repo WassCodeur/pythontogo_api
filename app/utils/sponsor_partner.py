@@ -6,48 +6,44 @@ from app.core.settings import logger
 from app.utils.helpers import remove_null_values
 
 
-async def add_sponsor_partner(db, payload: dict, event_code: str, background_tasks: BackgroundTasks):
+async def add_sponsor_partner(db_pool, payload: dict, event_code: str):
     try:
-        existing = await select_with_join(
-            db,
-            table="sponsors_partners",
-            join_table="events",
-            join_condition="sponsors_partners.event_id = events.id",
-            filter={"events.code": event_code,
-                    "sponsors_partners.name": payload["name"]},
-        )
+        async with db_pool.connection() as db:
+            existing = await select_with_join(
+                db,
+                table="sponsors_partners",
+                join_table="events",
+                join_condition="sponsors_partners.event_id = events.id",
+                filter={"events.code": event_code,
+                        "sponsors_partners.name": payload["name"]},
+            )
 
-        if existing:
-            # TODO: sent email to admin about duplicate request
-            logger.warning(
-                "Sponsor/Partner with name %s already exists for event code %s", payload['name'], event_code)
-            return {
-                "message": f"Company {payload['name']} partnership/sponsorship request received successfully and is being processed"
-            }
-        event = await select(db, "events", filter={"code": event_code})
-        if not event:
-            # TODO: send email to admin about invalid event code
-            logger.warning(
-                "Event with code %s not found for sponsor/partner inquiry", event_code)
-            return {
-                "message": f"Event with code {event_code} not found"
-            }
+            if existing:
+                # TODO: sent email to admin about duplicate request
+                logger.warning(
+                    "Sponsor/Partner with name %s already exists for event code %s", payload['name'], event_code)
+                return {
+                    "message": f"Company {payload['name']} partnership/sponsorship request received successfully and is being processed"
+                }
+            event = await select(db, "events", filter={"code": event_code})
+            if not event:
+                # TODO: send email to admin about invalid event code
+                logger.warning(
+                    "Event with code %s not found for sponsor/partner inquiry", event_code)
+                return {
+                    "message": f"Event with code {event_code} not found"
+                }
 
-        payload.update({
-            "id": str(uuid4()),
-            "event_id": event[0]["id"],
-        })
+            payload.update({
+                "id": str(uuid4()),
+                "event_id": event[0]["id"],
+            })
 
-        background_tasks.add_task(
-            insert, db, "sponsors_partners", payload)
-        return {"message": f"Company {payload['name']} partnership/sponsorship request received successfully and is being processed"}
+            await insert(db, "sponsors_partners", payload)
+            return {"message": f"Company {payload['name']} partnership/sponsorship request received successfully and is being processed"}
     except Exception as e:
         # TODO:  send email to admin about error during processing the request
         logger.error("Error adding sponsor/partner: %s", str(e))
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error adding sponsor/partner")
 
 
 async def _update_partner_sponsor(db, partner_id: str, payload: dict, background_tasks: BackgroundTasks):
@@ -119,6 +115,8 @@ async def get_sponsors_partners_by_event(db, event_code: str):
 async def get_confirmed_sponsors_partners_by_event(db, event_code: str):
     try:
 
+        print("Fetching confirmed sponsors/partners for event code:", event_code)
+
         exemple_response = {
             "name": "string",
             "website_url": "https://example.com/",
@@ -153,9 +151,12 @@ async def get_confirmed_sponsors_partners_by_event(db, event_code: str):
                                 detail=f"No sponsors/partners found for event code {event_code}")
         return partners
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+        logger.error("Error fetching sponsors/partners: %s", str(e))
         if isinstance(e, HTTPException):
             raise e
-        logger.error("Error fetching sponsors/partners: %s", str(e))
+        logger.error("Error fetching sponsors/partnerss")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error fetching sponsors/partners")
 
@@ -187,7 +188,7 @@ async def get_confirmed_sponsors_partners(db):
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error fetching sponsors/partners")
+                            detail="Error fetching sponsors/partners")
 
 
 async def delete_sponsor_partner(db, partner_id: str, background_tasks: BackgroundTasks):

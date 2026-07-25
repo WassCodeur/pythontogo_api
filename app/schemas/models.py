@@ -38,6 +38,8 @@ class PartnerType(str, Enum):
     SPONSORSHIP = "sponsorship"
     PYTHON_COMMUNITY = "python_community_partner"
     COMMUNITY_PARTNER = "community_partner"
+    INSTITUTIONAL_SUPPORT = "institutional_support"
+    VENUE_SUPPORT = "venue_support"
     OTHER = "other"
 
 
