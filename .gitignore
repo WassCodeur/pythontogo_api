@@ -63,3 +63,7 @@ tests/
 *.tmp
 *.swp
 *.swo
+script*
+*.csv
+attendees.json
+*.html

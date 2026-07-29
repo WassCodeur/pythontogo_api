@@ -9,6 +9,11 @@ from app.routers.api import api_routers
 from app.routers.notifications import api_router as notifications_router
 from app.webhooks.payments_callback import api_router as payments_callback_router
 from app.core.settings import logger, settings
+from pathlib import Path
+from datetime import datetime, timezone
+
+
+BASE_DIR = Path(__file__).resolve().parent
 
 origins = []
 if settings.env == "development":
@@ -33,6 +38,8 @@ else:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    current_time = datetime.now(timezone.utc)
+    app.state.current_time = current_time
     async with AsyncConnectionPool(
             conninfo=settings.db_url,
             min_size=1, max_size=5, timeout=10,
@@ -57,9 +64,9 @@ app = FastAPI(
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
     lifespan=lifespan,
-    openapi_url="/openapi.json" if _is_dev else None,
-    docs_url="/docs"            if _is_dev else None,
-    redoc_url="/redoc"          if _is_dev else None,
+    openapi_url="/openapi.json",  # if _is_dev else None,
+    docs_url="/docs",            # if _is_dev else None,
+    redoc_url="/redoc",          # if _is_dev else None,
 )
 
 
@@ -137,7 +144,7 @@ async def unsubscribe():
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return FileResponse("app/static/favicon.ico")
+    return FileResponse(BASE_DIR / "static" / "favicon.ico")
 
 
 app.include_router(api_routers)

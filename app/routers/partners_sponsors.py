@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, status, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, status, HTTPException
 from app.utils.sponsor_partner import (add_sponsor_partner, get_confirmed_sponsors_partners, get_confirmed_sponsors_partners_by_event, get_sponsors_partners_by_event,
                                        get_sponsors_partners, _update_partner_sponsor, delete_sponsor_partner)
 
@@ -22,19 +22,20 @@ api_router = APIRouter(prefix="/partners-sponsors",
 
 
 @api_router.post("/inquiry/{event_code}", response_model=MessageResponse, status_code=status.HTTP_202_ACCEPTED)
-async def partnership_sponsorship_inquiry(event_code: str, payload: PartnershipSponsorshipInquiry, background_tasks: BackgroundTasks, db=Depends(get_db_connection)):
+async def partnership_sponsorship_inquiry(request: Request, event_code: str, payload: PartnershipSponsorshipInquiry, background_tasks: BackgroundTasks):
     try:
         event_code = event_code.strip().upper()
         payload_dict = payload.model_dump(mode="json")
-        result = await add_sponsor_partner(db, payload_dict, event_code, background_tasks)
-        return result
+        background_tasks.add_task(
+            add_sponsor_partner, request.app.state.db_pool, payload_dict, event_code)
+        return {"message": f"Company {payload.name} partnership/sponsorship request received successfully and is being processed"}
     except Exception as e:
         logger.error(
             f"Error processing partnership/sponsorship inquiry: {str(e)}")
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(
-            status_code=500, detail=f"Error processing partnership/sponsorship request: {str(e)}")
+            status_code=500, detail=f"Error processing partnership/sponsorship request")
 
 
 @api_router.get("/all", response_model=list[PartnerSponsorSummary])
@@ -99,6 +100,8 @@ async def get_confirmed_partners_sponsors(event_code: str, db=Depends(get_db_con
                                 detail=f"No partners/sponsors found for event {event_code}")
         return partners_sponsors
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         logger.error(f"Error retrieving partners/sponsors: {str(e)}")
         if isinstance(e, HTTPException):
             raise e

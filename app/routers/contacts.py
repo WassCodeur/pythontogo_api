@@ -1,7 +1,7 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, status, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, status, HTTPException
 
 from app.utils.contact import (
-    add_contact, get_contact_by_id, get_all_contacts, update_contact, delete_contact)
+    add_contact, get_contact_by_id, get_all_contacts, update_contact, delete_contact,  send_contact_email_the_appropriate_team)
 
 from app.schemas.models import (
     ContactMessageSummary,
@@ -51,11 +51,12 @@ async def _get_contact_by_id(contact_id: str, db=Depends(get_db_connection)):
 
 
 @api_router.post("/send", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def add_contact_message(payload: ContactBase, background_tasks: BackgroundTasks, db=Depends(get_db_connection)):
+async def add_contact_message(request: Request, payload: ContactBase, background_tasks: BackgroundTasks):
     """Add a new contact message."""
     try:
-        result = await add_contact(db, payload.model_dump(mode="json"), background_tasks)
-        return result
+        background_tasks.add_task(
+            send_contact_email_the_appropriate_team, request.app.state.db_pool, payload.model_dump(mode="json"))
+        return {"message": "Contact message received successfully"}
     except Exception as e:
         logger.error(f"Error adding contact message: {str(e)}")
         if isinstance(e, HTTPException):

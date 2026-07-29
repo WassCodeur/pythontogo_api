@@ -6,13 +6,13 @@ from app.utils.premium_mail_template import render_premium_pass_email
 
 def render_pass_email(pass_type, first_name, full_name, ticket_id, ticket_url, qr_url):
     pass_type = pass_type.lower()
-    if pass_type == "professional":
+    if pass_type in ["professional", "profesional", "pro", "standard", "Professionnel"]:
         return render_professional_pass_email(first_name, full_name, ticket_id, ticket_url, qr_url)
-    elif pass_type == "premium":
+    elif pass_type in ["premium", "premier", "premium_pass", "premier_pass", "full_access"]:
         return render_premium_pass_email(first_name, full_name, ticket_id, ticket_url, qr_url)
-    elif pass_type == "student":
+    elif pass_type in ["student", "etudiant"]:
         return render_student_pass_email(first_name, full_name, ticket_id, ticket_url, qr_url)
-    elif pass_type == "dinner":
+    elif pass_type in ["diner", "dinner"]:
         return render_dinner_pass_email(first_name, full_name, ticket_id, ticket_url, qr_url)
     else:
-        return
+        return None

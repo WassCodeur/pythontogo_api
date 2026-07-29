@@ -24,7 +24,7 @@ def create_payment(payment: Payment):
             cancel_page_url=payment.cancel_page_url
         )
 
-        return {"payment_url": url}
+        return url
     except Exception as e:
         logger.error(f"Error creating payment: {str(e)}")
         if isinstance(e, HTTPException):

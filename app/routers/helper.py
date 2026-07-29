@@ -1,31 +1,16 @@
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.schemas.models import TicketSubmissionPayload
+from app.schemas.models import TicketSubmissionPayload, RegistrationCreate
 from app.core.settings import settings, logger
 from app.core.imagekit import upload_image_base64_url
 
-app_router = APIRouter(prefix="/helper", tags=["submissions"])
 
-
-base_url = settings.base_url.rstrip("/")
-base_url = f"{base_url}/{settings.root_path.strip('/')}" if settings.root_path else base_url
-
-
-@app_router.post("/ticket/submit/{event_code}")
-async def submit_ticket(request: Request, payload: TicketSubmissionPayload, event_code: str):
+def submit_ticket(payload: TicketSubmissionPayload) -> tuple[RegistrationCreate, bool]:
     try:
         # TODO - Coupon code validation can be added here if needed
         # TODO: Add validation for the payload if needed
 
-        auth = request.headers.get("Authorization")
-        header = {
-            "Authorization": auth
-        }
-        if not auth or not auth.startswith("Bearer "):
-            raise HTTPException(
-                status_code=401, detail="Unauthorized")
-        # Here you can add additional validation for the payload if needed
         registration_data = {
             "full_name": payload.buyer.fullName,
             "email": payload.buyer.email,
@@ -69,16 +54,11 @@ async def submit_ticket(request: Request, payload: TicketSubmissionPayload, even
                 raise HTTPException(
                     status_code=500, detail="Failed to upload student proof")
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(f"{base_url}/register/{event_code}?is_student={is_student}", headers=header, json=registration_data)
-            # Debugging line to check the response
-            response_data = response.json()
-            if response.status_code != 201:
-                raise HTTPException(
-                    status_code=response.status_code, detail="Failed to submit ticket")
-        return response_data
+        return registration_data, is_student
     except Exception as e:
         # Log the error for debugging
-        logger.error(f"Error processing ticket submission: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        logger.error(f"Error processing ticket submission")
         raise HTTPException(
-            status_code=500, detail=f"Error processing ticket submission: {str(e)}")
+            status_code=500, detail=f"Error processing ticket submission")

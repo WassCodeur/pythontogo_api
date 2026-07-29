@@ -31,17 +31,33 @@ settings = Config(
     smtp_port=config("SMTP_PORT", default=587, cast=int),
     smtp_user=config("SMTP_USER", default="user"),
     smtp_password=config("SMTP_PASSWORD", default="password"),
+    # Admin SMTP settings for internal notification service
+    admin_smtp_server=config("ADMIN_SMTP_SERVER", default=None),
+    admin_smtp_port=config("ADMIN_SMTP_PORT", default=None, cast=int),
+    admin_smtp_user=config("ADMIN_SMTP_USER", default=None),
+    admin_smtp_password=config("ADMIN_SMTP_PASSWORD", default=None),
     paydunya_public_key=config("PAYDUNYA_PUBLIC_KEY", default=None),
     paydunya_private_key=config("PAYDUNYA_PRIVATE_KEY", default=None),
     paydunya_token=config("PAYDUNYA_TOKEN", default=None),
     paydunya_master_key=config("PAYDUNYA_MASTER_KEY", default=None),
+    webhook_secret_key=config("WEBHOOK_SECRET_KEY", default=None),
+    webhook_url=config("WEBHOOK_URL", default=None),
+    success_page_url=config("SUCCESS_PAGE_URL", default=None),
+    cancel_page_url=config("CANCEL_PAGE_URL", default=None),
     imagekit_private_key=config("IMAGEKIT_PRIVATE_KEY", default=None),
     imagekit_public_key=config("IMAGEKIT_PUBLIC_KEY", default=None),
     imagekit_url_endpoint=config("IMAGEKIT_URL_ENDPOINT", default=None),
-    student_pass_template_url=config("STUDENT_PASS_TEMPLATE_URL", default=None),
-    professional_pass_template_url=config("PROFESSIONAL_PASS_TEMPLATE_URL", default=None),
-    premium_pass_template_url=config("PREMIUM_PASS_TEMPLATE_URL", default=None),
-    dinner_pass_template_url=config("DINNER_PASS_TEMPLATE_URL", default=None)
+    student_pass_template_url=config(
+        "STUDENT_PASS_TEMPLATE_URL", default=None),
+    professional_pass_template_url=config(
+        "PROFESSIONAL_PASS_TEMPLATE_URL", default=None),
+    premium_pass_template_url=config(
+        "PREMIUM_PASS_TEMPLATE_URL", default=None),
+    dinner_pass_template_url=config("DINNER_PASS_TEMPLATE_URL", default=None),
+    volunteering_team_email=config("VOLUNTEERING_TEAM_EMAIL", default=None),
+    ticketing_team_email=config("TICKETING_TEAM_EMAIL", default=None),
+    sponsorship_team_email=config("SPONSORSHIP_TEAM_EMAIL", default=None),
+    contact_team_email=config("CONTACT_TEAM_EMAIL", default=None)
 )
 
 

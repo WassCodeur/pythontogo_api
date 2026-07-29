@@ -4,7 +4,7 @@ import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from app.core.settings import settings, logger
-from app.utils.generate_email_htmal_format import generate_email_content
+from app.utils.generate_email_htmal_format import generate_affiliation_email_content, generate_email_content, generate_team_email_content,  generate_ticket_team_email_content
 from fastapi import HTTPException, status
 from app.utils.generate_ticket import generate_ticket
 from app.utils.render_pass_email import render_pass_email
@@ -95,6 +95,13 @@ def send_email_new(to, text_msg, html_msg, subject):
     msg['Subject'] = subject
     msg['From'] = f"PyCon Togo  2026 Team <{settings.smtp_user}>"
 
+    if not text_msg and not html_msg:
+        logger.error("Both text_msg and html_msg are empty. Email not sent.")
+        return
+    elif not text_msg:
+        text_msg = "This email requires an HTML-compatible email client to view."
+    elif not html_msg:
+        html_msg = "<html><body><p>This email requires an HTML-compatible email client to view.</p></body></html>"
     text_part = MIMEText(text_msg, 'plain')
     html_part = MIMEText(html_msg, 'html')
 
@@ -108,10 +115,37 @@ def send_email_new(to, text_msg, html_msg, subject):
         server.send_message(msg=msg)
 
 
-def send_email_for_pass(to, first_name, full_name, ticket_id, number_of_slots=1, pass_type=""):
-    if pass_type.lower() not in ["professional", "premium", "student", "diner"]:
-        logger.error(f"Invalid pass type: {pass_type}")
+def _send_mail_with_secondary_adress(to, text_msg, html_msg, subject, server=settings.admin_smtp_server, port=settings.admin_smtp_port, user=settings.admin_smtp_user, password=settings.admin_smtp_password):
+    msg = MIMEMultipart('alternative')
+
+    msg['To'] = to
+    msg['Subject'] = subject
+    msg['From'] = f"PyCon Togo  2026 Team <{settings.smtp_user}>"
+
+    if not text_msg and not html_msg:
+        logger.error("Both text_msg and html_msg are empty. Email not sent.")
         return
+    elif not text_msg:
+        text_msg = "This email requires an HTML-compatible email client to view."
+    elif not html_msg:
+        html_msg = "<html><body><p>This email requires an HTML-compatible email client to view.</p></body></html>"
+    text_part = MIMEText(text_msg, 'plain')
+    html_part = MIMEText(html_msg, 'html')
+
+    msg.attach(text_part)
+    msg.attach(html_part)
+
+    context = ssl.create_default_context()
+
+    with SMTP_SSL(host=server, port=port, context=context) as server:
+        server.login(user=user, password=password)
+        server.send_message(msg=msg)
+
+
+def send_email_for_pass(to, first_name, full_name, ticket_id, number_of_slots=1, pass_type=""):
+
+    # TODO: Add validation for pass_type to ensure it is one of the expected values
+
     subject = f"Your PyCon Togo 2026 {pass_type.capitalize()} Pass - Download Now"
     try:
         template_url = ""
@@ -120,19 +154,19 @@ def send_email_for_pass(to, first_name, full_name, ticket_id, number_of_slots=1,
         name_color = (0, 0, 0, 225)
         color_id = (160, 160, 160, 255)  # Default to light gray
         pass_type = pass_type.lower()
-        if pass_type == "professional":
+        if pass_type in ["professional", "profesional", "pro", "standard", "Professionnel"]:
             template_url = settings.professional_pass_template_url
             name_color = (136, 144, 247, 255)  # bleu lavande
             color_id = (160, 160, 160, 255)  # gris clair
-        elif pass_type == "premium":
+        elif pass_type in ["premium", "premier", "premium_pass", "premier_pass", "full_access"]:
             template_url = settings.premium_pass_template_url
             name_color = (251, 152, 136, 255)  # rose saumon
             color_id = (160, 160, 160, 255)  # gris clair
-        elif pass_type == "student":
+        elif pass_type in ["student", "etudiant"]:
             template_url = settings.student_pass_template_url
             name_color = (180, 230,  80, 255)  # vert lime
             color_id = (160, 160, 160, 255)  # gris clair
-        elif pass_type == "dinner":
+        elif pass_type in ["diner", "dinner"]:
             template_url = settings.dinner_pass_template_url
             name_color = (251, 152, 136, 255)  # rose saumon
             color_id = (160, 160, 160, 255)  # gris clair
@@ -147,6 +181,9 @@ def send_email_for_pass(to, first_name, full_name, ticket_id, number_of_slots=1,
         send_email_new(to=to, text_msg="",
                        html_msg=email_content, subject=subject)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+
         logger.error(f"Failed to send {pass_type} pass email to {to}: {e}")
         return
 
@@ -163,7 +200,99 @@ def send_email_for_student_proof_of_enrollment(to, first_name, full_name, proof_
         return
 
 
-if __name__ == "__main__":
+def send_email_for_affiliation(to, affiliate_name, ticket_name, commission_amount, purchase_date, referral_id, event_name):
+    subject = f"New Affiliation Notification - {event_name}"
+    try:
+        email_html_content, email_plain_text_content = generate_affiliation_email_content(
+            affiliate_name, ticket_name, commission_amount, purchase_date, referral_id, event_name)
+        _send_mail_with_secondary_adress(to=to, text_msg=email_plain_text_content,
+                                         html_msg=email_html_content, subject=subject)
+    except Exception as e:
+        logger.error(f"Failed to send affiliation email to {to}: {e}")
+        return
 
-    send_email_for_student_proof_of_enrollment(
-        to="wasscodeur228@gmail.com", first_name="Wass", full_name="Wasscodeur", proof_id="1234567890", submission_date="2023-10-10", document_name="Proof of Enrollment.pdf", document_url="https://example.com/proof_of_enrollment.pdf")
+
+def send_email_to_voluteering_team(name, email, message, date, phone=None):
+    try:
+        app_name = settings.business_name
+        notification_type = "Volunteering Team Notification"
+        title = "Someone wants to join the volunteering team"
+        team_name = "Volunteering"
+        subject = f"{name} has sent a message to the {team_name} - {app_name}"
+        to = settings.volunteering_team_email
+        date = date.strftime(
+            "%Y-%m-%d %H:%M:%S") if hasattr(date, 'strftime') else str(date)
+        email_html_content, email_plain_text_content = generate_team_email_content(
+            app_name, team_name, notification_type, title, name, email, subject, date, message, phone)
+        _send_mail_with_secondary_adress(to=to, text_msg=email_plain_text_content,
+                                         html_msg=email_html_content, subject=subject)
+    except Exception as e:
+        logger.error(f"Failed to send team notification email to {to}: {e}")
+        return
+
+
+def send_email_to_ticketing_team(name, email, ticket_type, amount, payment_status, date, payment_url, voucher_code="N/A", phone="N/A"):
+    try:
+        app_name = settings.business_name
+        title = f"{name} has paid for a ticket" if payment_status.lower(
+        ) == "completed" else "Someone has initiated a ticket purchase"
+        subject = f"{title} - {app_name}"
+        to = settings.ticketing_team_email
+        date = date.strftime(
+            "%Y-%m-%d %H:%M:%S") if hasattr(date, 'strftime') else str(date)
+        email_html_content, email_plain_text_content = generate_ticket_team_email_content(
+            app_name, name, email, ticket_type, amount, payment_status, date, payment_url, voucher_code, phone)
+
+        _send_mail_with_secondary_adress(to=to, text_msg=email_plain_text_content,
+                                         html_msg=email_html_content, subject=subject)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        logger.error(
+            f"Failed to send ticketing team notification email to {to}: {e}")
+        return
+
+
+def send_email_to_sponsorship_team(name, email, date, message, phone=None):
+    try:
+        to = settings.sponsorship_team_email
+        app_name = settings.business_name
+        team_name = "Sponsorship"
+        notification_type = "Sponsorship Team Notification"
+        title = "Someone wants to contact the sponsorship team"
+        subject = f"{name} has sent a message to the {team_name} - {app_name}"
+        date = date.strftime(
+            "%Y-%m-%d %H:%M:%S") if hasattr(date, 'strftime') else str(date)
+
+        email_html_content, email_plain_text_content = generate_team_email_content(
+            app_name, team_name, notification_type, title, name, email, subject, date, message, phone)
+        _send_mail_with_secondary_adress(to=to, text_msg=email_plain_text_content,
+                                         html_msg=email_html_content, subject=subject)
+    except Exception as e:
+        logger.error(
+            f"Failed to send sponsorship team notification email to {to}: {e}")
+        return
+
+
+def send_email_to_team(name, email, date, message, phone=None):
+    try:
+        to = settings.contact_team_email
+        app_name = settings.business_name
+        team_name = "Contact"
+        notification_type = "Contact Team Notification"
+        title = "Someone wants to contact the team"
+        subject = f"{name} has sent a message to the {team_name} - {app_name}"
+        date = date.strftime(
+            "%Y-%m-%d %H:%M:%S") if hasattr(date, 'strftime') else str(date)
+        email_html_content, email_plain_text_content = generate_team_email_content(
+            app_name, team_name, notification_type, title, name, email, subject, date, message, phone)
+        _send_mail_with_secondary_adress(to=to, text_msg=email_plain_text_content,
+                                         html_msg=email_html_content, subject=subject)
+    except Exception as e:
+        logger.error(f"Failed to send team notification email to {to}: {e}")
+        return
+
+
+if __name__ == "__main__":
+    send_email_for_affiliation(to="vehon22103@acoxs.com", affiliate_name="John Doe", ticket_name="Professional Pass",
+                               commission_amount="$10", purchase_date="2024-06-01", referral_id="REF123456", event_name="PyCon Togo 2026")

@@ -18,7 +18,7 @@ CREATE_TYPES_QUERY = """
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_type_enum') THEN
-        CREATE TYPE partner_type_enum AS ENUM ('partnership', 'sponsorship', 'media_partner', 'python_community_partner', 'community_partner', 'other');
+        CREATE TYPE partner_type_enum AS ENUM ('partnership', 'sponsorship', 'media_partner', 'python_community_partner', 'community_partner', 'institutional_support', 'venue_support', 'other');
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'delivery_method_enum') THEN
@@ -376,6 +376,28 @@ CREATE_TABLE_QUERIES = [
             REFERENCES events(id)
             ON DELETE CASCADE
     );""",
+
+    """CREATE TABLE IF NOT EXISTS vouchers (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        code VARCHAR(255) NOT NULL UNIQUE,
+        description TEXT,
+        discount_percentage NUMERIC(5, 2) CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
+        discount_amount NUMERIC(10, 2) CHECK (discount_amount >= 0),
+        number_of_uses INTEGER CHECK (number_of_uses >= 0),
+        number_of_uses_left INTEGER CHECK (number_of_uses_left >= 0),
+        applicable_ticket_ids JSONB,
+        applicable_event_ids JSONB,
+        applicable_user_emails JSONB,
+        applicable_user_ids JSONB,
+        already_used_by_user_emails JSONB,
+        referer_info JSONB,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        valid_from TIMESTAMPTZ,
+        valid_until TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );""",
+
     """
     CREATE TABLE IF NOT EXISTS registrations (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -392,21 +414,28 @@ CREATE_TABLE_QUERIES = [
         dietary_restrictions TEXT,
         payment_reference TEXT,
         payment_link TEXT,
+        voucher_id UUID,
+        voucher_code VARCHAR(255),
         agreed_to_code_of_conduct BOOLEAN NOT NULL DEFAULT FALSE,
         agreed_to_privacy_policy BOOLEAN NOT NULL DEFAULT FALSE,
         shared_with_sponsors BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        description TEXT,
         CONSTRAINT fk_registrations_event
             FOREIGN KEY (event_id)
             REFERENCES events(id)
             ON DELETE CASCADE,
+        CONSTRAINT fk_registrations_voucher
+            FOREIGN KEY (voucher_id)
+            REFERENCES vouchers(id)
+            ON DELETE SET NULL,
         CONSTRAINT fk_registrations_ticket
             FOREIGN KEY (ticket_id)
             REFERENCES tickets(id)
             ON DELETE SET NULL
-        
-        
+
+
     );""",
     """CREATE TABLE IF NOT EXISTS student_proofs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -444,14 +473,37 @@ CREATE_TABLE_QUERIES = [
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );""",
 
-]
+    """
+    CREATE TABLE IF NOT EXISTS team_members (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        role VARCHAR(255) NOT NULL,
+        bio TEXT,
+        photo_url TEXT,
+        social_links JSONB,
+        is_volunteer BOOLEAN NOT NULL DEFAULT FALSE,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        position INTEGER,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        event_id UUID NOT NULL,
+        CONSTRAINT fk_team_members_event
+            FOREIGN KEY (event_id)
+            REFERENCES events(id)
+            ON DELETE CASCADE
+    );""",
 
+]
 
 CREATE_INDEX_QUERIES = [
     "CREATE INDEX IF NOT EXISTS idx_sponsors_partners_event_id ON sponsors_partners(event_id);",
     "CREATE INDEX IF NOT EXISTS idx_api_keys_event_id ON api_keys(event_id);",
     "CREATE INDEX IF NOT EXISTS idx_job_offers_is_active ON job_offers(is_active);",
     "CREATE INDEX IF NOT EXISTS idx_job_offers_company ON job_offers(company);",
+    "CREATE INDEX IF NOT EXISTS idx_team_members_event_id ON team_members(event_id);",
+    "CREATE INDEX IF NOT EXISTS idx_team_members_is_active ON team_members(is_active);",
+    "CREATE INDEX IF NOT EXISTS idx_team_members_position ON team_members(position);",
 ]
 
 
