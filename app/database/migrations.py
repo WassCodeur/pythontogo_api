@@ -314,7 +314,7 @@ CREATE_TABLE_QUERIES = [
             ON DELETE CASCADE,
         CONSTRAINT fk_sessions_venue
             FOREIGN KEY (venue_id)
-            REFERENCES events(id)
+            REFERENCES venues(id)
             ON DELETE CASCADE,
         CONSTRAINT fk_sessions_track
             FOREIGN KEY (track_id)
@@ -441,7 +441,7 @@ CREATE_TABLE_QUERIES = [
         application_deadline TIMESTAMPTZ,
         tags JSONB,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );""",
 
 ]
