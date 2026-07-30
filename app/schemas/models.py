@@ -407,8 +407,8 @@ class SpeakerSummary(BaseModel):
     country: str | None = None
     bio: str
     photo_url: str
-    social_links: dict[str, str] = Field(default_factory=dict)
-    sessions: List[dict[str, str]] = Field(default_factory=list)
+    social_links: dict[str, str] | None = Field(default_factory=dict)
+    sessions: List[dict[str, str]] | None = Field(default_factory=list)
     is_featured: bool = False
     created_at: datetime
     updated_at: datetime
@@ -438,14 +438,13 @@ class SessionBase(BaseModel):
     event_id: UUID | None = None
     track_id: UUID | None = None
     venue_id: UUID | None = None
-    proposal_id: UUID | None = None
+    speaker_id: UUID | None = None
     title: str
     slug: str
     session_type: SessionType
     starts_at: datetime
     ends_at: datetime
-    summary: str | None = None
-    capacity: int | None = None
+    description: str | None = None
 
 
 class SessionSummary(SessionBase):
@@ -461,14 +460,13 @@ class SessionCreate(SessionBase):
 class SessionUpdate(BaseModel):
     track_id: UUID | None = None
     venue_id: UUID | None = None
-    proposal_id: UUID | None = None
+    speaker_id: UUID | None = None
     title: str | None = None
     slug: str | None = None
     session_type: SessionType | None = None
     starts_at: datetime | None = None
     ends_at: datetime | None = None
-    summary: str | None = None
-    capacity: int | None = None
+    description: str | None = None
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc))
 
