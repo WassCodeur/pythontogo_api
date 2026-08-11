@@ -493,6 +493,34 @@ CREATE_TABLE_QUERIES = [
             REFERENCES events(id)
             ON DELETE CASCADE
     );""",
+    """CREATE TABLE IF NOT EXISTS access_grants (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        first_name VARCHAR(255) NOT NULL,
+        last_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        gender VARCHAR(20) NOT NULL DEFAULT 'Not specified',
+        phone_number VARCHAR(40) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        country VARCHAR(120) NOT NULL DEFAULT 'Togo',
+        python_journey TEXT,
+        need_ticket BOOLEAN NOT NULL DEFAULT FALSE,
+        need_transport BOOLEAN NOT NULL DEFAULT FALSE,
+        need_accommodation BOOLEAN NOT NULL DEFAULT FALSE,
+        support_details TEXT,
+        grant_consent BOOLEAN NOT NULL DEFAULT FALSE,
+        event_id UUID NOT NULL,
+        is_student BOOLEAN NOT NULL DEFAULT FALSE,
+        student_proof_url TEXT,
+        is_approved BOOLEAN NOT NULL DEFAULT FALSE,
+        is_reviewed BOOLEAN NOT NULL DEFAULT FALSE,
+        comment TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT fk_access_grants_event
+            FOREIGN KEY (event_id)
+            REFERENCES events(id)
+            ON DELETE CASCADE
+        );""",
 
 ]
 
@@ -504,6 +532,8 @@ CREATE_INDEX_QUERIES = [
     "CREATE INDEX IF NOT EXISTS idx_team_members_event_id ON team_members(event_id);",
     "CREATE INDEX IF NOT EXISTS idx_team_members_is_active ON team_members(is_active);",
     "CREATE INDEX IF NOT EXISTS idx_team_members_position ON team_members(position);",
+    "CREATE INDEX IF NOT EXISTS idx_access_grants_event_id ON access_grants(event_id);",
+    "CREATE INDEX IF NOT EXISTS idx_access_grants_email ON access_grants(email);",
 ]
 
 

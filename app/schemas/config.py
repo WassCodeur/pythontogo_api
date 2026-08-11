@@ -48,3 +48,5 @@ class Config(BaseModel):
     ticketing_team_email: str | None = None
     sponsorship_team_email: str | None = None
     contact_team_email: str | None = None
+    whatsapp_token: str | None = None
+    whatsapp_api_url: str | None = None

@@ -57,7 +57,9 @@ settings = Config(
     volunteering_team_email=config("VOLUNTEERING_TEAM_EMAIL", default=None),
     ticketing_team_email=config("TICKETING_TEAM_EMAIL", default=None),
     sponsorship_team_email=config("SPONSORSHIP_TEAM_EMAIL", default=None),
-    contact_team_email=config("CONTACT_TEAM_EMAIL", default=None)
+    contact_team_email=config("CONTACT_TEAM_EMAIL", default=None),
+    whatsapp_token=config("WHATSAPP_TOKEN", default=None),
+    whatsapp_api_url=config("WHATSAPP_API_URL", default=None)
 )
 
 

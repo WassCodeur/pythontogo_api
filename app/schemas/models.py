@@ -40,6 +40,7 @@ class PartnerType(str, Enum):
     COMMUNITY_PARTNER = "community_partner"
     INSTITUTIONAL_SUPPORT = "institutional_support"
     VENUE_SUPPORT = "venue_support"
+    MEDIA_PARTNER = "media_partner"
     OTHER = "other"
 
 

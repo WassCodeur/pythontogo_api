@@ -15,6 +15,7 @@ from app.routers.job_offers import api_router as job_offers_router
 from app.routers.sessions import api_router as sessions_router
 from app.routers.vauchers import api_router as vauchers_router
 from app.routers.teams import api_router as teams_router
+from app.routers.access_grant import api_router as access_grant_router
 from fastapi import APIRouter
 from app.core.security import verify_api_key
 
@@ -38,3 +39,4 @@ api_routers.include_router(job_offers_router)
 api_routers.include_router(sessions_router)
 api_routers.include_router(vauchers_router)
 api_routers.include_router(teams_router)
+api_routers.include_router(access_grant_router)
