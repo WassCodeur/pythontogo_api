@@ -521,6 +521,24 @@ CREATE_TABLE_QUERIES = [
             REFERENCES events(id)
             ON DELETE CASCADE
         );""",
+    """
+    CREATE TABLE IF NOT EXISTS feedbacks (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        sex VARCHAR(64),
+        age VARCHAR(32),
+        profession VARCHAR(255),
+        country VARCHAR(120),
+        python_level VARCHAR(120),
+        heard TEXT,
+        rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+        overall TEXT,
+        favorite TEXT,
+        improvements TEXT,
+        comments TEXT,
+        is_resolved BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );""",
 
 ]
 
@@ -539,6 +557,12 @@ CREATE_INDEX_QUERIES = [
 
 ALTER_TABLE_QUERIES = [
     "ALTER TABLE sponsors_partners ADD COLUMN IF NOT EXISTS package_tier package_tier_enum;",
+    "ALTER TABLE feedbacks DROP COLUMN IF EXISTS event_code;",
+    "ALTER TABLE feedbacks DROP COLUMN IF EXISTS name;",
+    "ALTER TABLE feedbacks DROP COLUMN IF EXISTS email;",
+    "ALTER TABLE feedbacks DROP COLUMN IF EXISTS subject;",
+    "ALTER TABLE feedbacks DROP COLUMN IF EXISTS message;",
+    "ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS days JSONB DEFAULT '[]'::jsonb;",
 ]
 
 
