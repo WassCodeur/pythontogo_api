@@ -31,7 +31,7 @@ settings = Config(
     smtp_port=config("SMTP_PORT", default=587, cast=int),
     smtp_user=config("SMTP_USER", default="user"),
     smtp_password=config("SMTP_PASSWORD", default="password"),
-    # Admin SMTP settings for internal notification service
+    admin_api_key=config("ADMIN_API_KEY", default=""),
     admin_smtp_server=config("ADMIN_SMTP_SERVER", default=None),
     admin_smtp_port=config("ADMIN_SMTP_PORT", default=None),
     admin_smtp_user=config("ADMIN_SMTP_USER", default=None),

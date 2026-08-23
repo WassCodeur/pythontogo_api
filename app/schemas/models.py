@@ -576,6 +576,7 @@ class RegistrationCreate(RegistrationBase):
 
 class RegistrationSummary(RegistrationBase):
     id: UUID
+    event_id: UUID
     created_at: datetime
     updated_at: datetime
 

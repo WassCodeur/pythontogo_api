@@ -51,12 +51,11 @@ async def _get_feedback_by_id(feedback_id: str, db=Depends(get_db_connection)):
 
 
 @api_router.post("/send", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def add_feedback_message(request: Request, payload: FeedbackBase, background_tasks: BackgroundTasks):
+async def add_feedback_message(request: Request, payload: FeedbackBase):
     """Add a new feedback."""
     try:
-        background_tasks.add_task(
-            add_feedback, request.app.state.db_pool, payload.model_dump(mode="json"))
-        return {"message": "Feedback received successfully"}
+        result = await add_feedback(request.app.state.db_pool, payload.model_dump(mode="json"))
+        return result
     except Exception as e:
         logger.error(f"Error adding feedback: {str(e)}")
         if isinstance(e, HTTPException):
@@ -66,12 +65,12 @@ async def add_feedback_message(request: Request, payload: FeedbackBase, backgrou
 
 
 @api_router.put("/{feedback_id}", response_model=MessageResponse)
-async def _update_feedback(feedback_id: str, payload: FeedbackUpdate, background_tasks: BackgroundTasks, db=Depends(get_db_connection)):
+async def _update_feedback(feedback_id: str, payload: FeedbackUpdate, db=Depends(get_db_connection)):
     try:
         data_to_update = {k: v for k,
                           v in payload.model_dump(mode="json").items() if v is not None}
 
-        result = await update_feedback(db, feedback_id, data_to_update, background_tasks)
+        result = await update_feedback(db, feedback_id, data_to_update)
         return result
     except Exception as e:
         logger.error(f"Error updating feedback: {str(e)}")
@@ -82,9 +81,9 @@ async def _update_feedback(feedback_id: str, payload: FeedbackUpdate, background
 
 
 @api_router.delete("/{feedback_id}", response_model=MessageResponse)
-async def _delete_feedback(feedback_id: str, background_tasks: BackgroundTasks, db=Depends(get_db_connection)):
+async def _delete_feedback(feedback_id: str, db=Depends(get_db_connection)):
     try:
-        result = await delete_feedback(db, feedback_id, background_tasks)
+        result = await delete_feedback(db, feedback_id)
         return result
     except Exception as e:
         logger.error(f"Error deleting feedback: {str(e)}")
