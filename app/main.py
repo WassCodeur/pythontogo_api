@@ -8,7 +8,6 @@ from app.core.settings import settings
 from app.routers.api import api_routers
 from app.routers.notifications import api_router as notifications_router
 from app.webhooks.payments_callback import api_router as payments_callback_router
-from app.routers.feedback_public import api_router as feedback_public_router
 from app.core.settings import logger, settings
 from pathlib import Path
 from datetime import datetime, timezone
@@ -151,4 +150,3 @@ async def favicon():
 app.include_router(api_routers)
 app.include_router(payments_callback_router)
 app.include_router(notifications_router)
-app.include_router(feedback_public_router)

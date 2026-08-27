@@ -5,7 +5,6 @@ from app.database.connection import get_db_connection, get_redis_client
 from app.database.orm import select
 from json import dumps, loads
 from app.schemas.models import APIKeyResponse, APIKeyVerificationResponse
-from app.core.settings import settings
 
 security = HTTPBearer()
 
@@ -32,6 +31,7 @@ async def verify_api_key(credentials: Annotated[HTTPBasicCredentials, Depends(se
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="API key not found")
         expected_api_key = expected_api_key[0]
+        # Cache for 1 hour
         api_key_data = {
             "name": expected_api_key["name"],
             "key_value": expected_api_key["key_value"],
@@ -44,14 +44,3 @@ async def verify_api_key(credentials: Annotated[HTTPBasicCredentials, Depends(se
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
     return APIKeyVerificationResponse(is_valid=True, message="API key is valid")
-
-
-async def require_admin_secret(request: Request):
-    if not settings.admin_api_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Admin secret not configured")
-    admin_secret = request.headers.get("X-Admin-Secret")
-    if admin_secret != settings.admin_api_key:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
-    return True

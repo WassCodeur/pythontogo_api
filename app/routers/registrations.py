@@ -11,18 +11,15 @@ from app.schemas.models import (
     AttendeeID,
     TicketSubmissionPayload
 )
-from uuid import uuid4, UUID
+from uuid import uuid4
 import httpx
 from app.utils.tickets import get_ticket_by_id
 from app.database.orm import select, select_with_join
 from app.routers.helper import submit_ticket
 from app.utils.registrations import (
     create_registration,
-    get_all_registrations,
 )
 from app.payments.paydunya_service import create_invoice
-from app.core.security import require_admin_secret
-from app.database.orm import select as db_select
 
 
 api_router = APIRouter(tags=["registrations"])
@@ -148,17 +145,3 @@ async def _approve_student_registration(registration_id: AttendeeID, db=Depends(
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail="Internal server error")
-
-
-@api_router.get("/registrations", dependencies=[Depends(require_admin_secret)])
-async def _list_registrations(request: Request, event_id: UUID | None = None, db=Depends(get_db_connection)):
-    try:
-        registrations = await get_all_registrations(db, event_id=event_id)
-        if not registrations:
-            return []
-        return registrations
-    except Exception as e:
-        logger.error(f"Error listing registrations: {str(e)}")
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=500, detail="Error listing registrations")
