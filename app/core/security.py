@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, Request
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPBasicCredentials
 from typing import Annotated
 from app.database.connection import get_db_connection, get_redis_client
