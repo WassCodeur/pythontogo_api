@@ -11,10 +11,6 @@ async def add_feedback(db_pool, payload: dict):
         return {"message": "Feedback received successfully"}
     except Exception as e:
         logger.error(f"Error adding feedback: {str(e)}")
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(
-            status_code=500, detail="Error adding feedback")
 
 
 async def delete_feedback(db, feedback_id: str):
@@ -43,7 +39,8 @@ async def get_feedback_by_id(db, feedback_id: str):
         logger.error(f"Error retrieving feedback: {str(e)}")
         if isinstance(e, HTTPException):
             raise e
-        raise HTTPException(status_code=500, detail="Error retrieving feedback")
+        raise HTTPException(
+            status_code=500, detail="Error retrieving feedback")
 
 
 async def get_all_feedbacks(db):

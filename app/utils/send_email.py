@@ -115,12 +115,14 @@ def send_email_new(to, text_msg, html_msg, subject):
         server.send_message(msg=msg)
 
 
-def _send_mail_with_secondary_adress(to, text_msg, html_msg, subject, server=settings.admin_smtp_server, port=settings.admin_smtp_port, user=settings.admin_smtp_user, password=settings.admin_smtp_password):
+def _send_mail_with_secondary_adress(to, text_msg, html_msg, subject, server=settings.admin_smtp_server, port=settings.admin_smtp_port, user=settings.admin_smtp_user, password=settings.admin_smtp_password, cc_list=None, bcc_list=None):
     msg = MIMEMultipart('alternative')
 
     msg['To'] = to
     msg['Subject'] = subject
     msg['From'] = f"PyCon Togo  2026 Team <{settings.smtp_user}>"
+    msg['Cc'] = ', '.join(cc_list) if cc_list else ''
+    msg['Bcc'] = ', '.join(bcc_list) if bcc_list else ''
 
     if not text_msg and not html_msg:
         logger.error("Both text_msg and html_msg are empty. Email not sent.")
@@ -294,5 +296,90 @@ def send_email_to_team(name, email, date, message, phone=None):
 
 
 if __name__ == "__main__":
-    send_email_for_affiliation(to="vehon22103@acoxs.com", affiliate_name="John Doe", ticket_name="Professional Pass",
-                               commission_amount="$10", purchase_date="2024-06-01", referral_id="REF123456", event_name="PyCon Togo 2026")
+
+    # Version Texte Brut (text/plain)
+    text_version = """Hi Fadima and the Team at Kabakoo,
+
+    It was a real pleasure meeting you yesterday! Thank you for the warm welcome and for walking us through the incredible work you are doing around digital training and community building. The alignment between Kabakoo's vision and Python Togo's mission was clear, and we're truly excited about the potential of working together.
+
+    As discussed, here is everything you need to consider supporting PyCon Togo 2026 (August 28-30, Lomé):
+
+    1. Conference Program
+    PyCon Togo 2026 runs across three days:
+    - Day 1: Workshops, PyKids/DjangoKids, and beginner sessions
+    - Day 2: Main conference (Keynotes, talks, lightning talks)
+    - Day 3: Speakers' dinner and closing celebration
+
+    Program details: https://docs.google.com/spreadsheets/d/1909716RL0dbj5hYG2y8ScKV1xwSGU25OXLD_VgiBob8/edit?gid=0#gid=0
+    Speaker lineup: https://pycon.pytogo.org/speakers
+
+    2. Event Overview & Last Year Report
+    Event brochure: https://drive.google.com/file/d/1MxhdOtkcI1SGqr6qMhJiu8qV89jhmILp/view
+    Last year report: https://report.pytogo.org
+    Short highlight video: https://youtu.be/aU0v7jgyezk
+
+    3. Budget Breakdown & Priority Need
+    Budget breakdown: https://docs.google.com/spreadsheets/d/1YoYHr4aUms84cgGgul_4CpTA01u4eBW2R8EprTrYANc/edit?usp=sharing 
+
+    One of our most critical line items is our food & beverage budget, covering meals and refreshments for around 300+ attendees, speakers, and volunteers across the 3 days. Any support here whether financial or in-kind would make a huge, visible impact on the attendee experience. That said, we remain completely open to any other form of support that suits Kabakoo best.
+
+    We would be delighted to have you join us!
+
+    Thank you again for your time and openness. Looking forward to building something impactful together.
+
+    Best regards,
+
+    Python Togo Team
+    https://www.pytogo.org
+    contact@pytogo.org
+    PyCon Togo: https://pycon.pytogo.org/"""
+
+    # Version HTML (text/html)
+    html_version = """<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #222222; line-height: 1.5;">
+    <p>Hi Fadima and the Kabakoo Team,</p>
+
+    <p>It was a real pleasure meeting you yesterday! Thank you for the warm welcome and for walking us through the incredible work you are doing around digital training and community building. The alignment between Kabakoo's vision and Python Togo's mission was clear, and we're truly excited about the potential of working together.</p>
+
+    <p>As discussed, here is everything you need to consider supporting <strong>PyCon Togo 2026</strong> (August 28-30, Lom&eacute;):</p>
+
+    <p style="margin-bottom: 5px;"><strong>1. Conference Program</strong><br>
+    PyCon Togo 2026 runs across three days:</p>
+    <ul style="margin-top: 5px; margin-bottom: 10px; padding-left: 20px;">
+        <li><strong>Day 1:</strong> Workshops, PyKids/DjangoKids, and beginner sessions</li>
+        <li><strong>Day 2:</strong> Main conference (Keynotes, talks, lightning talks)</li>
+        <li><strong>Day 3:</strong> Speakers and Partners dinner and closing celebration</li>
+    </ul>
+    <p style="margin-top: 0;">
+        Program details: <a href="https://docs.google.com/spreadsheets/d/1909716RL0dbj5hYG2y8ScKV1xwSGU25OXLD_VgiBob8/edit?gid=0#gid=0" style="color: #1155cc;" target="_blank">Program draft</a><br>
+        Speaker lineup: <a href="https://pycon.pytogo.org/speakers" style="color: #1155cc;" target="_blank">https://pycon.pytogo.org/speakers</a>
+    </p>
+
+    <p><strong>2. Event Overview &amp; Last Year Report</strong><br>
+    Event brochure: <a href="https://drive.google.com/file/d/1MxhdOtkcI1SGqr6qMhJiu8qV89jhmILp/view" style="color: #1155cc;" target="_blank">https://drive.google.com/file/d/1MxhdOtkcI1SGqr6qMhJiu8qV89jhmILp/view</a><br>
+    Last year report: <a href="https://report.pytogo.org" style="color: #1155cc;" target="_blank">https://report.pytogo.org</a><br>
+    Short highlight video: <a href="https://youtu.be/aU0v7jgyezk" style="color: #1155cc;" target="_blank">https://youtu.be/aU0v7jgyezk</a></p>
+
+    <p><strong>3. Budget Breakdown &amp; Priority Need</strong><br>
+    Budget breakdown: <a href="https://docs.google.com/spreadsheets/d/1YoYHr4aUms84cgGgul_4CpTA01u4eBW2R8EprTrYANc/edit?usp=sharing" style="color: #1155cc;" target="_blank">Budget breakdown</a></p>
+
+    <p>One of our most critical line items is our <strong>food &amp; beverage budget</strong>, covering meals and refreshments for around 300+ attendees, speakers, and volunteers across the 3 days. Any support here whether financial or in-kind would make a huge, visible impact on the attendee experience. That said, we remain completely open to any other form of support that suits Kabakoo best.</p>
+
+    <p>We would be delighted to have you join us!</p>
+
+    <p>Thank you again. Looking forward to building something impactful together.</p>
+
+    <p>Best regards,</p>
+
+    <p style="margin-bottom: 5px;">
+        <strong>Python Togo Team</strong><br>
+        <a href="https://www.pytogo.org" style="color: #1155cc;">https://www.pytogo.org</a><br>
+        <a href="mailto:contact@pytogo.org" style="color: #1155cc;">contact@pytogo.org</a><br>
+        PyCon Togo: <a href="https://pycon.pytogo.org/" style="color: #1155cc;">https://pycon.pytogo.org/</a>
+    </p>
+    </div>"""
+
+    to = "wasscodeur228@gmail.com"
+
+    cc_list = ["b.wachiou@pytogo.org", "l.geoffrey@pytogo.org"]
+    _send_mail_with_secondary_adress(to=to, text_msg=text_version,
+                                     html_msg=html_version, subject="[PyCon Togo 2026] Suite à notre échange - Python Togo x Kabakoo", cc_list=cc_list)

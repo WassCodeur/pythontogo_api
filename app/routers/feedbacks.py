@@ -51,11 +51,12 @@ async def _get_feedback_by_id(feedback_id: str, db=Depends(get_db_connection)):
 
 
 @api_router.post("/send", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def add_feedback_message(request: Request, payload: FeedbackBase):
+async def add_feedback_message(request: Request, payload: FeedbackBase, background_tasks: BackgroundTasks):
     """Add a new feedback."""
     try:
-        result = await add_feedback(request.app.state.db_pool, payload.model_dump(mode="json"))
-        return result
+        background_tasks.add_task(
+            add_feedback, request.app.state.db_pool, payload.model_dump(mode="json"))
+        return {"message": "Thank you for your feedback! It has been received successfully."}
     except Exception as e:
         logger.error(f"Error adding feedback: {str(e)}")
         if isinstance(e, HTTPException):

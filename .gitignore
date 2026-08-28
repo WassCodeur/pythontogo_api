@@ -67,3 +67,6 @@ script*
 *.csv
 attendees.json
 *.html
+.env*
+
+json_to_csv.py

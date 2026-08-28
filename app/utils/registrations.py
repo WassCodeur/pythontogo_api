@@ -283,10 +283,10 @@ async def approve_student_registration(db, registration_id: str):
     """
     try:
         # registration = await select(db, "registrations", filter={"id": registration_id})
-        student_reg = await select_with_join(db, table="registrations", join_table="student_proofs", join_condition="registrations.id = student_proofs.registration_id", filter={"registrations.id": registration_id}, columns=[
+        student_reg = await select_with_join(db, table="registrations", join_table="student_proofs", join_condition="registrations.id = student_proofs.registration_id", filter={"registrations.id": registration_id, "registrations.payment_status": "completed"}, columns=[
             "registrations.full_name", "registrations.email", "registrations.payment_reference", "registrations.ticket_type", "registrations.ticket_quantity", "student_proofs.file_url", "student_proofs.file_type", "student_proofs.is_reviewed", "student_proofs.is_approved"])
         if not student_reg:
-            return MessageResponse(message="Registration not found")
+            return MessageResponse(message="Registration not found or not completed")
 
         send_email_for_pass(to=student_reg[0]['email'].strip(), first_name=student_reg[0]['full_name'].split()[0], full_name=student_reg[0]['full_name'],
                             ticket_id=student_reg[0]['payment_reference'], pass_type=student_reg[0]['ticket_type'], number_of_slots=student_reg[0]['ticket_quantity'])

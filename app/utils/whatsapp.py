@@ -10,7 +10,7 @@ headers = {
 }
 
 
-TEMPLATE_NAME = "pycon_togo_2026_retour_communaute"
+TEMPLATE_NAME = "pycon_togo_2026_commence_aujourdhui_"
 
 
 def send_whatsapp_message(to, template_name, language_code: str, components: list = None):
@@ -36,10 +36,12 @@ def send_whatsapp_message(to, template_name, language_code: str, components: lis
 # antendees_sheets/pycontg25_attendees_registrations_rows.csv
 # antendees_sheets/pycontg25_attendees_registrations_rows_2.csv
 # antendees_sheets/pycontg25_attendees_registrations_rows_3.csv
-CONTACTS_FILE = "antendees_sheets/pycontg25_attendees_Sheet1.csv"
+
+CONTACTS_FILE = "antendees_sheets/merge-csv.com__6a90ddd656972.csv"
+# "antendees_sheets/pycontg25_attendees_Sheet1.csv"
 
 
-def send_template(prenom, numero):
+def send_template(numero):
     payload = {
         "messaging_product": "whatsapp",
         "to": numero,  # format: 22890123456 sans + ni espace
@@ -47,25 +49,7 @@ def send_template(prenom, numero):
         "template": {
             "name": TEMPLATE_NAME,
             "language": {"code": "fr"},
-            "components": [
-                {
-                    "type": "header",
-                    "parameters": [
-                        {
-                            "type": "image",
-                            "image": {
-                                "link": "https://ik.imagekit.io/pythontogo/images/pycontg2026.png"
-                            }
-                        }
-                    ]
-                },
-                {
-                    "type": "body",
-                    "parameters": [
-                        {"type": "text", "text": prenom}  # {{1}}
-                    ]
-                }
-            ]
+
         }
     }
     r = requests.post(settings.whatsapp_api_url,
@@ -86,7 +70,7 @@ if __name__ == "__main__":
             #    print(f"Skip {numero} - format invalide")
             #    continue
 
-            status, result = send_template(prenom, numero)
+            status, result = send_template(numero)
             print(f"{count + 1}- [{status}] {prenom} -> {result}")
             # print(f"{count + 1}-{prenom} -> {numero}")
 
